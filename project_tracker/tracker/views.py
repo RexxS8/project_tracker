@@ -22,3 +22,6 @@ def login_view(request):
             messages.error(request, 'Invalid email or password.')
 
     return render(request, 'tracker/login.html')
+
+def projects_view(request):
+    return render(request, 'tracker/projects.html')

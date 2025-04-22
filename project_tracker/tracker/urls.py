@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.login_view, name='login'),
-    path('index/', views.dashboard_view, name='index'),  # contoh route dashboard
+    path('', views.login_view, name='login'),  # root URL = login
+    path('index/', views.dashboard_view, name='index'),  # dashboard
+    path('projects/', views.projects_view, name='projects'),  # project list
 ]

@@ -3,7 +3,6 @@ let projects = [
 ];
 
 // DOM Elements
-const addProjectBtn = document.getElementById('addProjectBtn');
 const projectModal = document.getElementById('projectModal');
 const closeModal = document.getElementById('closeModal');
 const projectForm = document.getElementById('projectForm');
@@ -24,9 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     
     // Event listeners
-    addProjectBtn.addEventListener('click', () => {
-        projectModal.classList.remove('hidden');
-    });
     
     closeModal.addEventListener('click', () => {
         projectModal.classList.add('hidden');

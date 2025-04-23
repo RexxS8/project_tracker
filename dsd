@@ -1,0 +1,54 @@
+[33mcommit 7a5265d8cd4b0c3283b53b53e92a3fc9c272ce80[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: RexxS8 <andri4martin@gmail.com>
+Date:   Wed Apr 23 14:48:57 2025 +0700
+
+    update pk for edit & delete Project
+
+[33mcommit 4c219756d3d306f57e3f150020c54d89a1c0ad54[m
+Author: RexxS8 <andri4martin@gmail.com>
+Date:   Wed Apr 23 11:26:48 2025 +0700
+
+    modify model, and setup setting.py
+
+[33mcommit cb18c370c31d686b3d4e90ea28d2e955b7fff47c[m
+Author: RexxS8 <andri4martin@gmail.com>
+Date:   Tue Apr 22 15:23:13 2025 +0700
+
+    DB setup
+
+[33mcommit 7c9e4fe3a4fffe03c1732dfa28e60a2964627abe[m
+Merge: c973bf5 f84999c
+Author: drwn21 <165977653+drwn21@users.noreply.github.com>
+Date:   Tue Apr 22 14:32:34 2025 +0700
+
+    Merge branch 'master' of https://github.com/RexxS8/project_tracker
+
+[33mcommit c973bf567e091a18e73c3833cbeba2711b24eea9[m
+Author: drwn21 <165977653+drwn21@users.noreply.github.com>
+Date:   Tue Apr 22 14:32:30 2025 +0700
+
+    Modifying projects.html and projects.js
+
+[33mcommit f84999c373b6a0cb2d465a35f9c7d21e5a7ae086[m
+Author: RexxS8 <andri4martin@gmail.com>
+Date:   Tue Apr 22 13:49:21 2025 +0700
+
+    commit add static url, and adding urls in views
+
+[33mcommit 381b5245932e1dbd2e6dfc59e4c56562a0f6a65a[m
+Author: drwn21 <165977653+drwn21@users.noreply.github.com>
+Date:   Tue Apr 22 11:42:57 2025 +0700
+
+    Changing index.html, Adding projects.html
+
+[33mcommit 9732e969f8eb2302752a93440905fc313ae491ab[m
+Author: RexxS8 <andri4martin@gmail.com>
+Date:   Tue Apr 22 11:20:31 2025 +0700
+
+    Commit ke 2
+
+[33mcommit 10e14a8ac569ea896f939e17e13f7651404f73dd[m
+Author: RexxS8 <andri4martin@gmail.com>
+Date:   Tue Apr 22 08:47:37 2025 +0700
+
+    Initial commit

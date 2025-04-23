@@ -43,26 +43,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 # Project Model
 class Project(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField()
+    name = models.CharField(max_length=100)
     start_date = models.DateField()
-    due_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=20, choices=[('Not Started', 'Not Started'), ('In Progress', 'In Progress'), ('Completed', 'Completed')])
+    priority = models.CharField(max_length=10, choices=[('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')])
+    progress = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
-
-# Task Model
-class Task(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
-    status = models.CharField(max_length=20, choices=[
-        ('To Do', 'To Do'),
-        ('In Progress', 'In Progress'),
-        ('Done', 'Done')
-    ])
-    start_date = models.DateField()
-    due_date = models.DateField()
-    progress = models.IntegerField(default=0)
-
-    def __str__(self):
-        return f"{self.project.name} - {self.name}"

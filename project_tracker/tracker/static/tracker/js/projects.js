@@ -14,7 +14,6 @@ const modalTitle = document.querySelector('#projectModal h3');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    // Event listeners
     addProjectBtn.addEventListener('click', () => {
         currentEditId = null;
         modalTitle.textContent = 'Add New Project';
@@ -22,28 +21,97 @@ document.addEventListener('DOMContentLoaded', () => {
         progressValue.textContent = '0%';
         projectModal.classList.remove('hidden');
     });
-    
+
     closeModal.addEventListener('click', () => {
         projectModal.classList.add('hidden');
     });
-    
+
     progressInput.addEventListener('input', (e) => {
         progressValue.textContent = `${e.target.value}%`;
     });
-    
+
     projectForm.addEventListener('submit', handleFormSubmit);
-    
-    // Initial render
-    renderProjects();
+
+    fetchProjects(); // Ambil data dari server
 });
 
-// Render projects to the table
+// Fungsi ambil CSRF Token dari cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Fetch data dari server
+async function fetchProjects() {
+    try {
+        const response = await fetch('/api/projects/');
+        const data = await response.json();
+        projects = data;
+        renderProjects();
+    } catch (error) {
+        console.error('Failed to fetch projects:', error);
+    }
+}
+
+// Kirim form ke Django
+async function handleFormSubmit(e) {
+    e.preventDefault();
+
+    const projectData = {
+        name: document.getElementById('projectName').value,
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value,
+        status: document.getElementById('status').value,
+        priority: document.getElementById('priority').value,
+        progress: parseInt(document.getElementById('progress').value)
+    };
+
+    try {
+        let url = '/api/projects/';
+        let method = 'POST';
+
+        if (currentEditId !== null) {
+            url += `${currentEditId}/`;
+            method = 'PUT';
+        }
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(projectData)
+        });
+
+        if (!response.ok) throw new Error('Failed to save project');
+
+        projectModal.classList.add('hidden');
+        projectForm.reset();
+        fetchProjects();
+    } catch (error) {
+        console.error(error);
+        alert('Error submitting project!');
+    }
+}
+
+// Render ke tabel
 function renderProjects() {
     projectsTableBody.innerHTML = '';
-    
+
     projects.forEach(project => {
         const row = document.createElement('tr');
-        
+
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
@@ -53,7 +121,7 @@ function renderProjects() {
                 </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${formatDate(project.startDate)} - ${formatDate(project.endDate)}</div>
+                <div class="text-sm text-gray-900">${formatDate(project.start_date)} - ${formatDate(project.end_date)}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(project.status)}">
@@ -82,70 +150,31 @@ function renderProjects() {
                 </button>
             </td>
         `;
-        
+
         projectsTableBody.appendChild(row);
     });
-}
-
-// Handle form submission
-function handleFormSubmit(e) {
-    e.preventDefault();
-    
-    const projectData = {
-        name: document.getElementById('projectName').value,
-        startDate: document.getElementById('startDate').value,
-        endDate: document.getElementById('endDate').value,
-        status: document.getElementById('status').value,
-        priority: document.getElementById('priority').value,
-        progress: parseInt(document.getElementById('progress').value)
-    };
-    
-    if (currentEditId !== null) {
-        // Update existing project
-        const index = projects.findIndex(p => p.id === currentEditId);
-        projects[index] = { ...projects[index], ...projectData };
-    } else {
-        // Add new project
-        projects.push({
-            id: projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1,
-            ...projectData
-        });
-    }
-    
-    projectModal.classList.add('hidden');
-    projectForm.reset();
-    renderProjects();
 }
 
 // Edit project
 function editProject(id) {
     const project = projects.find(p => p.id === id);
     if (!project) return;
-    
+
     currentEditId = id;
     modalTitle.textContent = 'Edit Project';
-    
-    // Fill form with project data
+
     document.getElementById('projectName').value = project.name;
-    document.getElementById('startDate').value = project.startDate;
-    document.getElementById('endDate').value = project.endDate;
+    document.getElementById('startDate').value = project.start_date;
+    document.getElementById('endDate').value = project.end_date;
     document.getElementById('status').value = project.status;
     document.getElementById('priority').value = project.priority;
     document.getElementById('progress').value = project.progress;
     progressValue.textContent = `${project.progress}%`;
-    
+
     projectModal.classList.remove('hidden');
 }
 
-// Delete project
-function deleteProject(id) {
-    if (confirm('Are you sure you want to delete this project?')) {
-        projects = projects.filter(p => p.id !== id);
-        renderProjects();
-    }
-}
-
-// Helper functions
+// Format tanggal
 function formatDate(dateString) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
@@ -174,5 +203,26 @@ function getPriorityClass(priority) {
             return 'bg-green-100 text-green-800';
         default:
             return 'bg-gray-100 text-gray-800';
+    }
+}
+
+// Delete project
+async function deleteProject(id) {
+    if (!confirm("Are you sure you want to delete this project?")) return;
+
+    try {
+        const response = await fetch(`/api/projects/${id}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to delete project');
+
+        fetchProjects(); // Refresh list
+    } catch (error) {
+        console.error('Error deleting project:', error);
+        alert('Failed to delete the project.');
     }
 }

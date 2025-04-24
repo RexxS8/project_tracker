@@ -7,13 +7,19 @@ from rest_framework import status
 from .models import Project
 from .serializers import ProjectSerializer
 from datetime import datetime
+from django.db.models import Q
 
 def dashboard_view(request):
     # Menghitung jumlah proyek berdasarkan status
     total_projects = Project.objects.count()
     in_progress = Project.objects.filter(status='In Progress').count()
     completed = Project.objects.filter(status='Completed').count()
-    overdue = Project.objects.filter(end_date__lt=datetime.today()).count()
+    
+    # Mengambil proyek yang overdue dan belum selesai (statusnya bukan "Completed")
+    overdue = Project.objects.filter(
+        Q(status='Not Started') | Q(status='In Progress'),  # Status yang belum selesai
+        end_date__lt=datetime.today()  # Tanggal selesai lebih kecil dari hari ini
+    ).count()
 
     context = {
         'total_projects': total_projects,
@@ -23,7 +29,6 @@ def dashboard_view(request):
     }
 
     return render(request, 'tracker/index.html', context)
-
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')

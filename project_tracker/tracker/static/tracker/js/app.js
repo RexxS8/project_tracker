@@ -38,7 +38,7 @@ async function fetchProjectsAndSummary() {
         renderSummary();  // Render the summary to the page
 
         // Re-initialize charts to refresh data
-        refreshCharts();
+        initCharts();
     } catch (error) {
         console.error('Error fetching projects or summary:', error);
     }
@@ -71,10 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Set default loading text for stats
-    totalProjectsEl.textContent = 'Loading...';
-    inProgressCountEl.textContent = 'Loading...';
-    completedCountEl.textContent = 'Loading...';
-    overdueCountEl.textContent = 'Loading...';
+    //totalProjectsEl.textContent = 'Loading...';
+    //inProgressCountEl.textContent = 'Loading...';
+    //completedCountEl.textContent = 'Loading...';
+    //overdueCountEl.textContent = 'Loading...';
 
     // Event listeners
     closeModal.addEventListener('click', () => {
@@ -174,6 +174,10 @@ function updateStats() {
     overdueCountEl.textContent = overdueCount;
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();  // ini yang aman karena belum ada chart sebelumnya
+});
+
 // Refresh charts by removing and recreating them
 function refreshCharts() {
     const statusChartEl = document.getElementById('statusChart');
@@ -181,9 +185,9 @@ function refreshCharts() {
 
     if (!statusChartEl || !progressChartEl) return;
 
-    // Remove existing charts
-    if (window.statusChart) window.statusChart.destroy();
-    if (window.progressChart) window.progressChart.destroy();
+    // Periksa apakah chart sudah ada sebelum menghancurkan
+    if (window.statusChart instanceof Chart) window.statusChart.destroy(); // <-- Tambahkan pengecekan
+    if (window.progressChart instanceof Chart) window.progressChart.destroy(); // <-- Tambahkan pengecekan
 
     // Initialize charts
     initCharts();
@@ -197,12 +201,6 @@ function initCharts() {
     if (!statusChartEl || !progressChartEl) return;
 
     // Status chart (Pie chart)
-    const statusCounts = {
-        'Not Started': projects.filter(p => p.status === 'Not Started').length,
-        'In Progress': projects.filter(p => p.status === 'In Progress').length,
-        'Completed': projects.filter(p => p.status === 'Completed').length
-    };
-
     const statusCtx = statusChartEl.getContext('2d');
     window.statusChart = new Chart(statusCtx, {
         type: 'pie',
@@ -234,10 +232,10 @@ function initCharts() {
     window.progressChart = new Chart(progressCtx, {
         type: 'bar',
         data: {
-            labels: projects.map(p => p.name),
+            labels: progressData.map(p => p.name),
             datasets: [{
                 label: 'Progress (%)',
-                data: projects.map(p => p.progress),
+                data: progressData.map(p => p.progress),
                 backgroundColor: '#60a5fa', // blue-400
                 borderColor: '#2563eb', // blue-600
                 borderWidth: 1

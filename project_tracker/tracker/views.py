@@ -21,11 +21,29 @@ def dashboard_view(request):
         end_date__lt=datetime.today()  # Tanggal selesai lebih kecil dari hari ini
     ).count()
 
+    # Menyiapkan data untuk chart
+    projects = Project.objects.all()
+    status_counts = {
+        'Not Started': projects.filter(status='Not Started').count(),
+        'In Progress': projects.filter(status='In Progress').count(),
+        'Completed': projects.filter(status='Completed').count(),
+    }
+
+    progress_data = [
+        {
+            'name': project.name,
+            'progress': project.progress
+        }
+        for project in projects
+    ]
+
     context = {
         'total_projects': total_projects,
         'in_progress': in_progress,
         'completed': completed,
         'overdue': overdue,
+        'status_counts': status_counts,
+        'progress_data': progress_data,
     }
 
     return render(request, 'tracker/index.html', context)

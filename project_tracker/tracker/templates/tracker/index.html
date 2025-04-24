@@ -7,6 +7,7 @@
     <title>Project Tracker</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50">
@@ -178,6 +179,14 @@
         </div>
     </div>
 
+    <script>
+        // Data from Django template
+        const statusCounts = {{ status_counts|safe }};
+        const progressData = {{ progress_data|safe }};
+        console.log('Status Counts:', statusCounts);  // Debug log
+        console.log('Progress Data:', progressData);  // Debug log
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{% static 'tracker/js/app.js' %}"></script>
 
 </body>

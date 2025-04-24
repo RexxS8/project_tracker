@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from rest_framework.views import APIView
@@ -6,11 +6,23 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Project
 from .serializers import ProjectSerializer
-from django.shortcuts import get_object_or_404
+from datetime import datetime
 
 def dashboard_view(request):
-    # Anda bisa menambahkan konteks atau logika lain sesuai kebutuhan
-    return render(request, 'tracker/index.html')  # Pastikan file 'index.html' ada
+    # Menghitung jumlah proyek berdasarkan status
+    total_projects = Project.objects.count()
+    in_progress = Project.objects.filter(status='In Progress').count()
+    completed = Project.objects.filter(status='Completed').count()
+    overdue = Project.objects.filter(end_date__lt=datetime.today()).count()
+
+    context = {
+        'total_projects': total_projects,
+        'in_progress': in_progress,
+        'completed': completed,
+        'overdue': overdue,
+    }
+
+    return render(request, 'tracker/index.html', context)
 
 def login_view(request):
     if request.method == 'POST':
@@ -33,35 +45,28 @@ def projects_view(request):
     return render(request, 'tracker/projects.html')
 
 class ProjectAPI(APIView):
-    # GET untuk list semua project
-    def get(self, request):
-        projects = Project.objects.all()
-        serializer = ProjectSerializer(projects, many=True)
-        return Response(serializer.data)
+    # GET untuk list semua project atau detail satu project
+    def get(self, request, pk=None):
+        if pk:
+            project = get_object_or_404(Project, pk=pk)
+            serializer = ProjectSerializer(project)
+            return Response(serializer.data)
+        else:
+            projects = Project.objects.all()
+            serializer = ProjectSerializer(projects, many=True)
+            return Response(serializer.data)
 
     # POST untuk create project
     def post(self, request):
-        project_data = {
-            "name": request.data.get("name"),
-            "start_date": request.data.get("start_date"),
-            "end_date": request.data.get("end_date"),
-            "status": request.data.get("status"),
-            "priority": request.data.get("priority"),
-            "progress": request.data.get("progress"),
-        }
-        project_serializer = ProjectSerializer(data=project_data)
-        if project_serializer.is_valid():
-            project = project_serializer.save()
-            return Response(ProjectSerializer(project).data, status=status.HTTP_201_CREATED)
-        return Response(project_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = ProjectSerializer(data=request.data)
+        if serializer.is_valid():
+            project = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # PUT untuk update project
     def put(self, request, pk):
-        try:
-            project = Project.objects.get(pk=pk)
-        except Project.DoesNotExist:
-            return Response({'error': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
-
+        project = get_object_or_404(Project, pk=pk)
         serializer = ProjectSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()

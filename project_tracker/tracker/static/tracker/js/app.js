@@ -1,58 +1,118 @@
-let projects = [
-    
-];
+let projects = [];
+let summary = {};  // To store summary data
 
-// DOM Elements
-const projectModal = document.getElementById('projectModal');
-const closeModal = document.getElementById('closeModal');
-const projectForm = document.getElementById('projectForm');
-const progressInput = document.getElementById('progress');
-const progressValue = document.getElementById('progressValue');
-const projectsTableBody = document.getElementById('projectsTableBody');
+// Function to fetch both projects and summary from the API
+async function fetchProjectsAndSummary() {
+    try {
+        // Fetch projects data
+        const responseProjects = await fetch('/api/projects/', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('userToken') // If using token for authentication
+            }
+        });
 
-// Stats elements
-const totalProjectsEl = document.getElementById('totalProjects');
-const inProgressCountEl = document.getElementById('inProgressCount');
-const completedCountEl = document.getElementById('completedCount');
-const overdueCountEl = document.getElementById('overdueCount');
+        if (!responseProjects.ok) {
+            throw new Error('Network response was not ok');
+        }
 
-// Initialize the application
+        projects = await responseProjects.json();
+
+        // Fetch summary data
+        const responseSummary = await fetch('/api/projects/summary/', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('userToken') // If using token for authentication
+            }
+        });
+
+        if (!responseSummary.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        summary = await responseSummary.json();
+
+        // After fetching both, update the UI
+        renderProjects();
+        updateStats();
+        renderSummary();  // Render the summary to the page
+
+        // Re-initialize charts to refresh data
+        refreshCharts();
+    } catch (error) {
+        console.error('Error fetching projects or summary:', error);
+    }
+}
+
+// Render summary to the page
+function renderSummary() {
+    if (!summary) return; // Skip if no summary data
+
+    // Display summary in a specific section
+    const summaryEl = document.getElementById('projectSummary');
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <h3>Project Summary</h3>
+            <p>Total Projects: ${summary.totalProjects}</p>
+            <p>Completed Projects: ${summary.completedProjects}</p>
+            <p>In Progress: ${summary.inProgress}</p>
+            <p>Overdue Projects: ${summary.overdue}</p>
+        `;
+    }
+}
+
+// Initialize the application after the page is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    renderProjects();
-    updateStats();
-    initCharts();
-    
+    if (isUserLoggedIn()) {
+        // If logged in, fetch both projects and summary
+        fetchProjectsAndSummary();
+    } else {
+        console.log('User is not logged in.');
+    }
+
+    // Set default loading text for stats
+    totalProjectsEl.textContent = 'Loading...';
+    inProgressCountEl.textContent = 'Loading...';
+    completedCountEl.textContent = 'Loading...';
+    overdueCountEl.textContent = 'Loading...';
+
     // Event listeners
-    
     closeModal.addEventListener('click', () => {
         projectModal.classList.add('hidden');
         projectForm.reset();
+        delete projectForm.dataset.editId; // Remove any stored edit ID
     });
-    
+
     progressInput.addEventListener('input', (e) => {
         progressValue.textContent = `${e.target.value}%`;
     });
-    
+
     projectForm.addEventListener('submit', handleFormSubmit);
 });
 
+// Check if user is logged in (check session or token)
+function isUserLoggedIn() {
+    const userToken = localStorage.getItem('userToken');
+    return userToken !== null;
+}
+
 // Render projects to the table
 function renderProjects() {
+    if (!projectsTableBody) return;
+
     projectsTableBody.innerHTML = '';
-    
+
     projects.forEach(project => {
         const row = document.createElement('tr');
-        
-        // Calculate if project is overdue
+
+        // Calculate if the project is overdue
         const today = new Date();
-        const endDate = new Date(project.endDate);
+        const endDate = new Date(project.end_date);
         const isOverdue = today > endDate && project.status !== 'Completed';
-        
+
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10">
-                    </div>
                     <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">${project.name}</div>
                         <div class="text-sm text-gray-500">ID: ${project.id}</div>
@@ -60,8 +120,8 @@ function renderProjects() {
                 </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm text-gray-900">${formatDate(project.startDate)} - ${formatDate(project.endDate)}</div>
-                <div class="text-sm text-gray-500">${calculateDuration(project.startDate, project.endDate)}</div>
+                <div class="text-sm text-gray-900">${formatDate(project.start_date)} - ${formatDate(project.end_date)}</div>
+                <div class="text-sm text-gray-500">${calculateDuration(project.start_date, project.end_date)}</div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(project.status)}">
@@ -89,40 +149,62 @@ function renderProjects() {
                 </button>
             </td>
         `;
-        
+
         projectsTableBody.appendChild(row);
     });
 }
 
 // Update statistics
 function updateStats() {
+    if (!totalProjectsEl) return;
+
     const today = new Date();
-    
+
     const totalProjects = projects.length;
     const inProgressCount = projects.filter(p => p.status === 'In Progress').length;
     const completedCount = projects.filter(p => p.status === 'Completed').length;
     const overdueCount = projects.filter(p => {
-        const endDate = new Date(p.endDate);
+        const endDate = new Date(p.end_date);
         return today > endDate && p.status !== 'Completed';
     }).length;
-    
+
     totalProjectsEl.textContent = totalProjects;
     inProgressCountEl.textContent = inProgressCount;
     completedCountEl.textContent = completedCount;
     overdueCountEl.textContent = overdueCount;
 }
 
+// Refresh charts by removing and recreating them
+function refreshCharts() {
+    const statusChartEl = document.getElementById('statusChart');
+    const progressChartEl = document.getElementById('progressChart');
+
+    if (!statusChartEl || !progressChartEl) return;
+
+    // Remove existing charts
+    if (window.statusChart) window.statusChart.destroy();
+    if (window.progressChart) window.progressChart.destroy();
+
+    // Initialize charts
+    initCharts();
+}
+
 // Initialize charts
 function initCharts() {
+    const statusChartEl = document.getElementById('statusChart');
+    const progressChartEl = document.getElementById('progressChart');
+
+    if (!statusChartEl || !progressChartEl) return;
+
     // Status chart (Pie chart)
     const statusCounts = {
         'Not Started': projects.filter(p => p.status === 'Not Started').length,
         'In Progress': projects.filter(p => p.status === 'In Progress').length,
         'Completed': projects.filter(p => p.status === 'Completed').length
     };
-    
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    new Chart(statusCtx, {
+
+    const statusCtx = statusChartEl.getContext('2d');
+    window.statusChart = new Chart(statusCtx, {
         type: 'pie',
         data: {
             labels: Object.keys(statusCounts),
@@ -146,10 +228,10 @@ function initCharts() {
             }
         }
     });
-    
+
     // Progress chart (Bar chart)
-    const progressCtx = document.getElementById('progressChart').getContext('2d');
-    new Chart(progressCtx, {
+    const progressCtx = progressChartEl.getContext('2d');
+    window.progressChart = new Chart(progressCtx, {
         type: 'bar',
         data: {
             labels: projects.map(p => p.name),
@@ -174,66 +256,10 @@ function initCharts() {
     });
 }
 
-// Handle form submission
-function handleFormSubmit(e) {
-    e.preventDefault();
-    
-    const newProject = {
-        id: projects.length + 1,
-        name: document.getElementById('projectName').value,
-        startDate: document.getElementById('startDate').value,
-        endDate: document.getElementById('endDate').value,
-        status: document.getElementById('status').value,
-        priority: document.getElementById('priority').value,
-        progress: parseInt(document.getElementById('progress').value)
-    };
-    
-    projects.push(newProject);
-    projectModal.classList.add('hidden');
-    projectForm.reset();
-    
-    renderProjects();
-    updateStats();
-    
-    // Refresh charts
-    document.getElementById('statusChart').remove();
-    document.getElementById('progressChart').remove();
-    const statusContainer = document.querySelector('.h-64');
-    statusContainer.innerHTML = '<canvas id="statusChart"></canvas>';
-    const progressContainer = document.querySelectorAll('.h-64')[1];
-    progressContainer.innerHTML = '<canvas id="progressChart"></canvas>';
-    
-    initCharts();
-}
-
-// Edit project (would be expanded in a real application)
-function editProject(id) {
-    alert(`Edit project ${id} functionality would go here`);
-}
-
-// Delete project
-function deleteProject(id) {
-    if (confirm('Are you sure you want to delete this project?')) {
-        projects = projects.filter(p => p.id !== id);
-        renderProjects();
-        updateStats();
-        
-        // Refresh charts
-        document.getElementById('statusChart').remove();
-        document.getElementById('progressChart').remove();
-        const statusContainer = document.querySelector('.h-64');
-        statusContainer.innerHTML = '<canvas id="statusChart"></canvas>';
-        const progressContainer = document.querySelectorAll('.h-64')[1];
-        progressContainer.innerHTML = '<canvas id="progressChart"></canvas>';
-        
-        initCharts();
-    }
-}
-
 // Helper functions
-function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US');
 }
 
 function calculateDuration(startDate, endDate) {
@@ -247,13 +273,13 @@ function calculateDuration(startDate, endDate) {
 function getStatusClass(status) {
     switch (status) {
         case 'Not Started':
-            return 'bg-red-100 text-red-800';
+            return 'bg-red-400';
         case 'In Progress':
-            return 'bg-yellow-100 text-yellow-800';
+            return 'bg-amber-400';
         case 'Completed':
-            return 'bg-green-100 text-green-800';
+            return 'bg-green-400';
         default:
-            return 'bg-gray-100 text-gray-800';
+            return 'bg-gray-200';
     }
 }
 
@@ -273,12 +299,12 @@ function getPriorityClass(priority) {
 function getPriorityIcon(priority) {
     switch (priority) {
         case 'High':
-            return '<i class="fas fa-arrow-up"></i>';
+            return '🔥';
         case 'Medium':
-            return '<i class="fas fa-minus"></i>';
+            return '⚠️';
         case 'Low':
-            return '<i class="fas fa-arrow-down"></i>';
+            return '✅';
         default:
-            return '';
+            return '🔘';
     }
 }

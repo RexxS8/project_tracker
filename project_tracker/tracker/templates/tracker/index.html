@@ -60,7 +60,7 @@
                             <i class="fas fa-folder"></i>
                         </span>
                     </div>
-                    <div class="text-3xl font-bold mb-2" id="totalProjects">0</div>
+                    <div class="text-3xl font-bold mb-2" id="totalProjects">{{ total_projects }}</div>
                     <p class="text-gray-500 text-sm">Projects tracked</p>
                 </div>
                 
@@ -71,7 +71,7 @@
                             <i class="fas fa-spinner"></i>
                         </span>
                     </div>
-                    <div class="text-3xl font-bold mb-2" id="inProgressCount">0</div>
+                    <div class="text-3xl font-bold mb-2" id="inProgressCount">{{ in_progress }}</div>
                     <p class="text-gray-500 text-sm">Active projects</p>
                 </div>
                 
@@ -82,7 +82,7 @@
                             <i class="fas fa-check"></i>
                         </span>
                     </div>
-                    <div class="text-3xl font-bold mb-2" id="completedCount">0</div>
+                    <div class="text-3xl font-bold mb-2" id="completedCount">{{ completed }}</div>
                     <p class="text-gray-500 text-sm">Finished projects</p>
                 </div>
                 
@@ -93,7 +93,7 @@
                             <i class="fas fa-exclamation-triangle"></i>
                         </span>
                     </div>
-                    <div class="text-3xl font-bold mb-2" id="overdueCount">0</div>
+                    <div class="text-3xl font-bold mb-2" id="overdueCount">{{ overdue }}</div>
                     <p class="text-gray-500 text-sm">Delayed projects</p>
                 </div>
             </div>

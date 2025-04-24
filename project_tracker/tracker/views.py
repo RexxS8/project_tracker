@@ -29,6 +29,7 @@ def dashboard_view(request):
     }
 
     return render(request, 'tracker/index.html', context)
+
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')

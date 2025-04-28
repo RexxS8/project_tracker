@@ -2,39 +2,6 @@
 let projects = [];
 let currentEditId = null;
 
-// DOM Elements
-const addProjectBtn = document.getElementById('addProjectBtn');
-const projectModal = document.getElementById('projectModal');
-const closeModal = document.getElementById('closeModal');
-const projectForm = document.getElementById('projectForm');
-const progressInput = document.getElementById('progress');
-const progressValue = document.getElementById('progressValue');
-const projectsTableBody = document.getElementById('projectsTableBody');
-const modalTitle = document.querySelector('#projectModal h3');
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    addProjectBtn.addEventListener('click', () => {
-        currentEditId = null;
-        modalTitle.textContent = 'Add New Project';
-        projectForm.reset();
-        progressValue.textContent = '0%';
-        projectModal.classList.remove('hidden');
-    });
-
-    closeModal.addEventListener('click', () => {
-        projectModal.classList.add('hidden');
-    });
-
-    progressInput.addEventListener('input', (e) => {
-        progressValue.textContent = `${e.target.value}%`;
-    });
-
-    projectForm.addEventListener('submit', handleFormSubmit);
-
-    fetchProjects(); // Ambil data dari server
-});
-
 // Fungsi ambil CSRF Token dari cookie
 function getCookie(name) {
     let cookieValue = null;
@@ -51,7 +18,57 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Fetch data dari server
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const addProjectBtn = document.getElementById('addProjectBtn');
+    const projectModal = document.getElementById('projectModal');
+    const closeModal = document.getElementById('closeModal');
+    const projectForm = document.getElementById('projectForm');
+    const progressInput = document.getElementById('progress');
+    const progressValue = document.getElementById('progressValue');
+    const projectsTableBody = document.getElementById('projectsTableBody');
+    const modalTitle = document.querySelector('#projectModal h3');
+
+    // Ini ambil elemen yg sudah ADA di HTML
+    const importProjectBtn = document.getElementById('importProjectBtn');
+    const csvFileInput = document.getElementById('csvFileInput');
+
+    // Button to open add project modal
+    addProjectBtn.addEventListener('click', () => {
+        currentEditId = null;
+        modalTitle.textContent = 'Add New Project';
+        projectForm.reset();
+        progressValue.textContent = '0%';
+        projectModal.classList.remove('hidden');
+    });
+
+    // Button to close modal
+    closeModal.addEventListener('click', () => {
+        projectModal.classList.add('hidden');
+    });
+
+    // Update progress value label
+    progressInput.addEventListener('input', (e) => {
+        progressValue.textContent = `${e.target.value}%`;
+    });
+
+    // Submit project form
+    projectForm.addEventListener('submit', handleFormSubmit);
+
+    // Button to open file picker
+    importProjectBtn.addEventListener('click', () => {
+        csvFileInput.click(); // langsung klik input file
+    });
+
+    // Handle file selection
+    csvFileInput.addEventListener('change', handleCsvUpload);
+
+    // Fetch initial project data
+    fetchProjects();
+});
+
+// Fetch projects from server
 async function fetchProjects() {
     try {
         const response = await fetch('/api/projects/');
@@ -63,7 +80,7 @@ async function fetchProjects() {
     }
 }
 
-// Kirim form ke Django
+// Handle form submit
 async function handleFormSubmit(e) {
     e.preventDefault();
 
@@ -96,8 +113,8 @@ async function handleFormSubmit(e) {
 
         if (!response.ok) throw new Error('Failed to save project');
 
-        projectModal.classList.add('hidden');
-        projectForm.reset();
+        document.getElementById('projectModal').classList.add('hidden');
+        document.getElementById('projectForm').reset();
         fetchProjects();
     } catch (error) {
         console.error(error);
@@ -105,8 +122,74 @@ async function handleFormSubmit(e) {
     }
 }
 
-// Render ke tabel
+// Handle CSV file upload
+async function handleCsvUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        alert('No file selected.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const text = e.target.result;
+        const csvData = parseCsv(text);
+
+        for (const projectData of csvData) {
+            try {
+                await fetch('/api/projects/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(projectData)
+                });
+            } catch (error) {
+                console.error('Error saving project from CSV:', error);
+            }
+        }
+
+        fetchProjects(); // Refresh tampilan
+        alert('CSV imported successfully!');
+    };
+    reader.readAsText(file);
+}
+
+// Parse CSV text into project objects
+function parseCsv(text) {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const projects = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        const project = {};
+
+        headers.forEach((header, index) => {
+            let value = values[index];
+            if (header === 'progress') {
+                value = parseInt(value) || 0;
+            }
+            project[header] = value;
+        });
+
+        projects.push({
+            name: project.name || '',
+            start_date: project.start_date || '',
+            end_date: project.end_date || '',
+            status: project.status || 'Not Started',
+            priority: project.priority || 'Low',
+            progress: project.progress || 0
+        });
+    }
+
+    return projects;
+}
+
+// Render project list to table
 function renderProjects() {
+    const projectsTableBody = document.getElementById('projectsTableBody');
     projectsTableBody.innerHTML = '';
 
     projects.forEach(project => {
@@ -160,6 +243,10 @@ function editProject(id) {
     const project = projects.find(p => p.id === id);
     if (!project) return;
 
+    const modalTitle = document.querySelector('#projectModal h3');
+    const projectForm = document.getElementById('projectForm');
+    const progressValue = document.getElementById('progressValue');
+
     currentEditId = id;
     modalTitle.textContent = 'Edit Project';
 
@@ -171,7 +258,7 @@ function editProject(id) {
     document.getElementById('progress').value = project.progress;
     progressValue.textContent = `${project.progress}%`;
 
-    projectModal.classList.remove('hidden');
+    document.getElementById('projectModal').classList.remove('hidden');
 }
 
 // Format tanggal
@@ -180,29 +267,23 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
+// Get status badge class
 function getStatusClass(status) {
     switch (status) {
-        case 'Not Started':
-            return 'bg-gray-100 text-gray-800';
-        case 'In Progress':
-            return 'bg-blue-100 text-blue-800';
-        case 'Completed':
-            return 'bg-green-100 text-green-800';
-        default:
-            return 'bg-gray-100 text-gray-800';
+        case 'Not Started': return 'bg-gray-100 text-gray-800';
+        case 'In Progress': return 'bg-blue-100 text-blue-800';
+        case 'Completed': return 'bg-green-100 text-green-800';
+        default: return 'bg-gray-100 text-gray-800';
     }
 }
 
+// Get priority badge class
 function getPriorityClass(priority) {
     switch (priority) {
-        case 'High':
-            return 'bg-red-100 text-red-800';
-        case 'Medium':
-            return 'bg-yellow-100 text-yellow-800';
-        case 'Low':
-            return 'bg-green-100 text-green-800';
-        default:
-            return 'bg-gray-100 text-gray-800';
+        case 'High': return 'bg-red-100 text-red-800';
+        case 'Medium': return 'bg-yellow-100 text-yellow-800';
+        case 'Low': return 'bg-green-100 text-green-800';
+        default: return 'bg-gray-100 text-gray-800';
     }
 }
 
@@ -220,7 +301,7 @@ async function deleteProject(id) {
 
         if (!response.ok) throw new Error('Failed to delete project');
 
-        fetchProjects(); // Refresh list
+        fetchProjects();
     } catch (error) {
         console.error('Error deleting project:', error);
         alert('Failed to delete the project.');

@@ -141,3 +141,13 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     # Tambahkan domain frontend jika pakai hosting terpisah
 ]
+
+# Redirect to login page if not authenticated
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}

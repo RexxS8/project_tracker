@@ -19,7 +19,7 @@ async function fetchProjectsAndSummary() {
         projects = await responseProjects.json();
 
         // Fetch summary data
-        const responseSummary = await fetch('/api/projects/summary/', {
+        const responseSummary = await fetch('/api/projects/', {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + localStorage.getItem('userToken') // If using token for authentication
@@ -36,12 +36,40 @@ async function fetchProjectsAndSummary() {
         renderProjects();
         updateStats();
         renderSummary();  // Render the summary to the page
-
+        renderCalendar(projects); // Render the calendar with projects
         // Re-initialize charts to refresh data
         initCharts();
     } catch (error) {
         console.error('Error fetching projects or summary:', error);
     }
+}
+
+// Calendar initialization function
+ffunction renderCalendar(projects) {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+
+    // Pastikan field start dan end sesuai sumber data (API atau template)
+    const calendarEvents = projects.map(project => ({
+        title: project.title || project.name, // Ambil title dari template atau name dari API
+        start: project.start || project.start_date, // Ambil start dari template atau start_date dari API
+        end: project.end || project.end_date,       // Ambil end dari template atau end_date dari API
+        color: '#3182CE'
+    }));
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 650,
+        events: calendarEvents,
+        eventColor: '#3182CE',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        }
+    });
+
+    calendar.render();
 }
 
 // Render summary to the page
@@ -62,25 +90,24 @@ function renderSummary() {
 }
 
 // Initialize the application after the page is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
     if (isUserLoggedIn()) {
-        // If logged in, fetch both projects and summary
         fetchProjectsAndSummary();
     } else {
         console.log('User is not logged in.');
     }
 
-    // Set default loading text for stats
-    //totalProjectsEl.textContent = 'Loading...';
-    //inProgressCountEl.textContent = 'Loading...';
-    //completedCountEl.textContent = 'Loading...';
-    //overdueCountEl.textContent = 'Loading...';
+    // Set default loading text for stats (optional, uncomment if needed)
+    // totalProjectsEl.textContent = 'Loading...';
+    // inProgressCountEl.textContent = 'Loading...';
+    // completedCountEl.textContent = 'Loading...';
+    // overdueCountEl.textContent = 'Loading...';
 
     // Event listeners
     closeModal.addEventListener('click', () => {
         projectModal.classList.add('hidden');
         projectForm.reset();
-        delete projectForm.dataset.editId; // Remove any stored edit ID
+        delete projectForm.dataset.editId;
     });
 
     progressInput.addEventListener('input', (e) => {
@@ -88,6 +115,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     projectForm.addEventListener('submit', handleFormSubmit);
+
+    // Calendar initialization moved here
+    const projectsFromHTML = document.getElementById('calendar')?.getAttribute('data-projects');
+    if (projectsFromHTML) {
+        try {
+            const parsedProjects = JSON.parse(projectsFromHTML);
+            renderCalendar(parsedProjects);
+        } catch (error) {
+            console.error('Invalid JSON in data-projects attribute:', error);
+        }
+    }
+
+    initCharts();
 });
 
 // Check if user is logged in (check session or token)

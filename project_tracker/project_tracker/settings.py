@@ -141,3 +141,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     # Tambahkan domain frontend jika pakai hosting terpisah
 ]
+
+LOGIN_URL = '/login/'  # Ganti sesuai URL login yang kamu buat
+LOGIN_REDIRECT_URL = '/'  # Ganti sesuai halaman yang diinginkan setelah login berhasil
+LOGOUT_REDIRECT_URL = '/login/'  # Redirect setelah logout

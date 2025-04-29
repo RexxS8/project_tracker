@@ -7,25 +7,25 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Project
 from .serializers import ProjectSerializer
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+import json
 
 @login_required(login_url='/login/')
 def dashboard_view(request):
-    # Menghitung jumlah proyek berdasarkan status
-    total_projects = Project.objects.count()
-    in_progress = Project.objects.filter(status='In Progress').count()
-    completed = Project.objects.filter(status='Completed').count()
-
-    # Mengambil proyek yang overdue dan belum selesai (statusnya bukan "Completed")
-    overdue = Project.objects.filter(
-        Q(status='Not Started') | Q(status='In Progress'),
-        end_date__lt=datetime.today()
-    ).count()
-
-    # Menyiapkan data untuk chart
     projects = Project.objects.all()
+
+    total_projects = projects.count()
+    in_progress = projects.filter(status='In Progress').count()
+    completed = projects.filter(status='Completed').count()
+
+    overdue = projects.filter(
+        Q(status='Not Started') | Q(status='In Progress'),
+        end_date__lt=timezone.now()
+    ).exclude(status='Completed').count()
+
     status_counts = {
         'Not Started': projects.filter(status='Not Started').count(),
         'In Progress': projects.filter(status='In Progress').count(),
@@ -40,27 +40,38 @@ def dashboard_view(request):
         for project in projects
     ]
 
+    # Data untuk FullCalendar
+    project_events = [
+        {
+            'title': p.name,
+            'start': p.start_date.isoformat(),
+            'end': p.end_date.isoformat()
+        }
+        for p in projects
+    ]
+
     context = {
         'total_projects': total_projects,
         'in_progress': in_progress,
         'completed': completed,
         'overdue': overdue,
-        'status_counts': status_counts,
-        'progress_data': progress_data,
+        'status_counts': json.dumps(status_counts),
+        'progress_data': json.dumps(progress_data),
+        'projects': json.dumps(project_events)  # ← ini dikirim ke template
     }
 
     return render(request, 'tracker/index.html', context)
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('email')  # HARUSNYA ini tetap "username"
+        email = request.POST.get('email')
         password = request.POST.get('password')
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=email, password=password)
 
         if user is not None:
             login(request, user)
-            return redirect('index')  # setelah login ke dashboard
+            return redirect('index')
         else:
             messages.error(request, 'Invalid email or password.')
 

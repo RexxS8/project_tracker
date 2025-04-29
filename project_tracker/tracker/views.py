@@ -4,21 +4,24 @@ from django.contrib import messages
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from .models import Project
 from .serializers import ProjectSerializer
 from datetime import datetime
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
 
+@login_required(login_url='/login/')
 def dashboard_view(request):
     # Menghitung jumlah proyek berdasarkan status
     total_projects = Project.objects.count()
     in_progress = Project.objects.filter(status='In Progress').count()
     completed = Project.objects.filter(status='Completed').count()
-    
+
     # Mengambil proyek yang overdue dan belum selesai (statusnya bukan "Completed")
     overdue = Project.objects.filter(
-        Q(status='Not Started') | Q(status='In Progress'),  # Status yang belum selesai
-        end_date__lt=datetime.today()  # Tanggal selesai lebih kecil dari hari ini
+        Q(status='Not Started') | Q(status='In Progress'),
+        end_date__lt=datetime.today()
     ).count()
 
     # Menyiapkan data untuk chart
@@ -50,25 +53,25 @@ def dashboard_view(request):
 
 def login_view(request):
     if request.method == 'POST':
-        email = request.POST.get('email')
+        username = request.POST.get('email')  # HARUSNYA ini tetap "username"
         password = request.POST.get('password')
 
-        # Username in Django is "username", bukan "email" by default,
-        # jadi pastikan kamu pakai custom user model jika mau login pakai email
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=username, password=password)
 
         if user is not None:
             login(request, user)
-            return redirect('index')  # ganti dengan nama url dashboard kamu
+            return redirect('index')  # setelah login ke dashboard
         else:
             messages.error(request, 'Invalid email or password.')
 
     return render(request, 'tracker/login.html')
 
+@login_required(login_url='/login/')
 def projects_view(request):
     return render(request, 'tracker/projects.html')
 
 class ProjectAPI(APIView):
+    permission_classes = [IsAuthenticated]
     # GET untuk list semua project atau detail satu project
     def get(self, request, pk=None):
         if pk:

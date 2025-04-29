@@ -45,15 +45,15 @@ async function fetchProjectsAndSummary() {
 }
 
 // Calendar initialization function
-ffunction renderCalendar(projects) {
+function renderCalendar(projects) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
-    // Pastikan field start dan end sesuai sumber data (API atau template)
+    // Pastikan projects adalah array dari event objects
     const calendarEvents = projects.map(project => ({
-        title: project.title || project.name, // Ambil title dari template atau name dari API
-        start: project.start || project.start_date, // Ambil start dari template atau start_date dari API
-        end: project.end || project.end_date,       // Ambil end dari template atau end_date dari API
+        title: project.title || project.name,  // Gunakan title atau name
+        start: project.start,
+        end: project.end,
         color: '#3182CE'
     }));
 
@@ -71,7 +71,6 @@ ffunction renderCalendar(projects) {
 
     calendar.render();
 }
-
 // Render summary to the page
 function renderSummary() {
     if (!summary) return; // Skip if no summary data

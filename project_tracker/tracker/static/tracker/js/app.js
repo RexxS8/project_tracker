@@ -45,31 +45,40 @@ async function fetchProjectsAndSummary() {
     }
 }
 
-// Calendar initialization function
+// Fungsi renderCalendar
 function renderCalendar(projects) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
     try {
-        // Destroy kalender sebelumnya jika ada
-        if (calendar && typeof calendar.destroy === 'function') {
-            calendar.destroy();
-        }
+        if (calendar) calendar.destroy();
 
-        // Pastikan data events valid
-        const events = projects.map(p => ({
-            title: p.title || p.name || 'No Title',
-            start: p.start || p.start_date,
-            end: p.end || p.end_date,
-            color: '#3182CE',
-            allDay: true // Tambahkan ini untuk event seharian penuh
+        // Parse data dari atribut HTML
+        const events = JSON.parse(calendarEl.dataset.projects).map(event => ({
+            ...event,
+            allDay: true,
+            display: 'block',
+            backgroundColor: event.color,
+            borderColor: event.color
         }));
 
-        // Inisialisasi kalender
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            height: 'auto',
             events: events,
+            eventContent: function(arg) {
+                return {
+                    html: `<div class="fc-event-main-frame">
+                            <div class="fc-event-title-container">
+                                <div class="fc-event-title">${arg.event.title}</div>
+                            </div>
+                        </div>`
+                };
+            },
+            eventDidMount: function(arg) {
+                arg.el.style.padding = '2px 5px';
+                arg.el.style.borderRadius = '4px';
+                arg.el.style.fontSize = '0.85em';
+            },
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',

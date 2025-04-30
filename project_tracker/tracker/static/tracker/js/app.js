@@ -49,15 +49,19 @@ function renderCalendar(projects) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
-    // Pastikan projects adalah array dari event objects
+    if (calendar !== null) {
+        calendar.destroy();
+    }
+
+    // Map data projek ke format yang diharapkan FullCalendar
     const calendarEvents = projects.map(project => ({
-        title: project.title || project.name,  // Gunakan title atau name
-        start: project.start,
-        end: project.end,
+        title: project.name, // Gunakan 'name' dari API atau 'title' dari template
+        start: project.start_date || project.start, // Sesuaikan dengan field yang ada
+        end: project.end_date || project.end,
         color: '#3182CE'
     }));
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
+    calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         height: 650,
         events: calendarEvents,
@@ -71,6 +75,7 @@ function renderCalendar(projects) {
 
     calendar.render();
 }
+
 // Render summary to the page
 function renderSummary() {
     if (!summary) return; // Skip if no summary data

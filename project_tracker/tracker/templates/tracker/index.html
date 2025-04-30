@@ -15,10 +15,10 @@
     <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.min.css' rel='stylesheet' />
     <link href='https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/main.min.css' rel='stylesheet' />
     <!-- FullCalendar JS -->
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/main.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/main.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/main.global.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/main.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/global/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/global/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.8/global/main.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.8/global/main.min.js'></script>
 </head>
 <body class="bg-gray-50">
     <div class="flex h-screen">
@@ -195,6 +195,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'tracker/js/app.js' %}"></script>
     <script>
         // Data from Django template
         const statusCounts = {{ status_counts|safe }};
@@ -203,8 +205,5 @@
         console.log('Progress Data:', progressData);  // Debug log
         console.log('{{ projects|safe }}');
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{% static 'tracker/js/app.js' %}"></script>
-
 </body>
 </html>

@@ -1,5 +1,6 @@
 let projects = [];
 let summary = {};  // To store summary data
+let calendar = null;
 
 // Function to fetch both projects and summary from the API
 async function fetchProjectsAndSummary() {
@@ -49,31 +50,37 @@ function renderCalendar(projects) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
-    if (calendar !== null) {
-        calendar.destroy();
-    }
-
-    // Map data projek ke format yang diharapkan FullCalendar
-    const calendarEvents = projects.map(project => ({
-        title: project.name, // Gunakan 'name' dari API atau 'title' dari template
-        start: project.start_date || project.start, // Sesuaikan dengan field yang ada
-        end: project.end_date || project.end,
-        color: '#3182CE'
-    }));
-
-    calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        height: 650,
-        events: calendarEvents,
-        eventColor: '#3182CE',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    try {
+        // Destroy kalender sebelumnya jika ada
+        if (calendar && typeof calendar.destroy === 'function') {
+            calendar.destroy();
         }
-    });
 
-    calendar.render();
+        // Pastikan data events valid
+        const events = projects.map(p => ({
+            title: p.title || p.name || 'No Title',
+            start: p.start || p.start_date,
+            end: p.end || p.end_date,
+            color: '#3182CE',
+            allDay: true // Tambahkan ini untuk event seharian penuh
+        }));
+
+        // Inisialisasi kalender
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: 'auto',
+            events: events,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            }
+        });
+
+        calendar.render();
+    } catch (error) {
+        console.error('Calendar error:', error);
+    }
 }
 
 // Render summary to the page
@@ -93,6 +100,18 @@ function renderSummary() {
     }
 }
 
+// Tambahkan ini di bagian atas file setelah deklarasi projects
+const progressInput = document.getElementById('progress');
+const progressValue = document.getElementById('progressValue');
+const projectModal = document.getElementById('projectModal');
+const closeModal = document.getElementById('closeModal');
+const projectForm = document.getElementById('projectForm');
+const projectsTableBody = document.querySelector('#projectsTable tbody');
+const totalProjectsEl = document.getElementById('totalProjects');
+const inProgressCountEl = document.getElementById('inProgressCount');
+const completedCountEl = document.getElementById('completedCount');
+const overdueCountEl = document.getElementById('overdueCount');
+
 // Initialize the application after the page is loaded
 document.addEventListener('DOMContentLoaded', function () {
     if (isUserLoggedIn()) {
@@ -101,37 +120,40 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('User is not logged in.');
     }
 
-    // Set default loading text for stats (optional, uncomment if needed)
-    // totalProjectsEl.textContent = 'Loading...';
-    // inProgressCountEl.textContent = 'Loading...';
-    // completedCountEl.textContent = 'Loading...';
-    // overdueCountEl.textContent = 'Loading...';
-
-    // Event listeners
-    closeModal.addEventListener('click', () => {
-        projectModal.classList.add('hidden');
-        projectForm.reset();
-        delete projectForm.dataset.editId;
-    });
-
-    progressInput.addEventListener('input', (e) => {
-        progressValue.textContent = `${e.target.value}%`;
-    });
-
-    projectForm.addEventListener('submit', handleFormSubmit);
-
-    // Calendar initialization moved here
-    const projectsFromHTML = document.getElementById('calendar')?.getAttribute('data-projects');
-    if (projectsFromHTML) {
+    // Inisialisasi kalender jika ada data dari atribut HTML
+    const calendarEl = document.getElementById('calendar');
+    if (calendarEl) {
         try {
-            const parsedProjects = JSON.parse(projectsFromHTML);
-            renderCalendar(parsedProjects);
+            const projectsData = JSON.parse(calendarEl.dataset.projects);
+            renderCalendar(projectsData);
         } catch (error) {
-            console.error('Invalid JSON in data-projects attribute:', error);
+            console.error('Error parsing projects:', error);
+            renderCalendar([]); // Fallback ke kalender kosong
         }
     }
 
-    initCharts();
+    // Event listener untuk close modal
+    if (closeModal && projectModal && projectForm) {
+        closeModal.addEventListener('click', () => {
+            projectModal.classList.add('hidden');
+            projectForm.reset();
+            delete projectForm.dataset.editId;
+        });
+    }
+
+    // Event listener untuk input progress bar
+    if (progressInput && progressValue) {
+        progressInput.addEventListener('input', (e) => {
+            progressValue.textContent = `${e.target.value}%`;
+        });
+    }
+
+    // Submit project form
+    if (projectForm) {
+        projectForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    initCharts(); // Initialize charts after all DOM elements are ready
 });
 
 // Check if user is logged in (check session or token)

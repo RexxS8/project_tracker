@@ -12,6 +12,7 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 import json
+from django.core.serializers.json import DjangoJSONEncoder
 
 @login_required(login_url='/login/')
 def dashboard_view(request):
@@ -43,9 +44,9 @@ def dashboard_view(request):
     # Data untuk FullCalendar
     project_events = [
         {
-            'title': p.name,
-            'start': p.start_date.isoformat(),
-            'end': p.end_date.isoformat()
+            "title": p.name,
+            "start": p.start_date.strftime("%Y-%m-%d"),
+            "end": p.end_date.strftime("%Y-%m-%d")
         }
         for p in projects
     ]
@@ -57,7 +58,7 @@ def dashboard_view(request):
         'overdue': overdue,
         'status_counts': json.dumps(status_counts),
         'progress_data': json.dumps(progress_data),
-        'projects': json.dumps(project_events)  # ← ini dikirim ke template
+        'projects': json.dumps(project_events, cls=DjangoJSONEncoder)  # ← ini dikirim ke template
     }
 
     return render(request, 'tracker/index.html', context)

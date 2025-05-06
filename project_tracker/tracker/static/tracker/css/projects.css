@@ -1,0 +1,25 @@
+/* projects.css */
+.project-dropdown {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    display: table-row; /* Diperlukan untuk struktur tabel */
+}
+
+.project-dropdown > td {
+    padding: 0 !important;
+    transition: all 0.3s ease-out;
+}
+
+.project-dropdown.active > td {
+    padding: 1rem !important;
+}
+
+.project-dropdown.active {
+    max-height: 1000px;
+}
+
+tr.project-row.active {
+    background-color: #f8fafc;
+    box-shadow: inset 3px 0 0 #3b82f6;
+}

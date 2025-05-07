@@ -44,6 +44,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 # Project Model
 class Project(models.Model):
     name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)  # Tambahkan ini
     start_date = models.DateField()
     end_date = models.DateField()
     status = models.CharField(max_length=20, choices=[('Not Started', 'Not Started'), ('In Progress', 'In Progress'), ('Completed', 'Completed')])

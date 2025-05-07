@@ -81,7 +81,15 @@ def login_view(request):
 
 @login_required(login_url='/login/')
 def projects_view(request):
-    return render(request, 'tracker/projects.html')
+    # Ambil semua project dari database
+    projects = Project.objects.all()
+
+    # Kirim data project ke template
+    context = {
+        'projects': projects
+    }
+
+    return render(request, 'tracker/projects.html', context)
 
 class ProjectAPI(APIView):
     permission_classes = [IsAuthenticated]

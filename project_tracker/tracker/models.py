@@ -53,3 +53,15 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+# Progress Report Model
+class WeeklyProgress(models.Model):
+    project = models.ForeignKey(Project, related_name='weekly_progress', on_delete=models.CASCADE)
+    week_number = models.PositiveIntegerField()
+    progress = models.PositiveIntegerField()
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=[('At Risk', 'At Risk'), ('On Track', 'On Track')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Week {self.week_number} - {self.project.name}"

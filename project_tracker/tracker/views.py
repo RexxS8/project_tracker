@@ -126,3 +126,18 @@ class ProjectAPI(APIView):
         project = get_object_or_404(Project, pk=pk)
         project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class WeeklyProgressAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, project_id):
+        weekly_progress = WeeklyProgress.objects.filter(project_id=project_id)
+        serializer = WeeklyProgressSerializer(weekly_progress, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, project_id):
+        serializer = WeeklyProgressSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(project_id=project_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

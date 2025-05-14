@@ -82,6 +82,19 @@
                         </thead>
                         <tbody id="projectsTableBody" class="bg-white divide-y divide-gray-200">
                             <!-- Projects will be added here dynamically -->
+                            <template id="weeklyProgressTemplate">
+                                <tr class="weekly-detail hidden">
+                                    <td colspan="6" class="px-6 py-4 bg-gray-50">
+                                        <div class="weekly-progress">
+                                            <h4 class="font-medium mb-4">Weekly Progress</h4>
+                                            <div class="space-y-3 weekly-entries"></div>
+                                            <button onclick="handleAddWeek(event)" class="mt-4 bg-green-600 text-white px-3 py-1 rounded">
+                                                Add Week
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>

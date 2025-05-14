@@ -1,25 +1,8 @@
-/* projects.css */
-.project-dropdown {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    display: table-row; /* Diperlukan untuk struktur tabel */
+.weekly-detail {
+    transition: all 0.3s ease;
 }
-
-.project-dropdown > td {
-    padding: 0 !important;
-    transition: all 0.3s ease-out;
-}
-
-.project-dropdown.active > td {
-    padding: 1rem !important;
-}
-
-.project-dropdown.active {
-    max-height: 1000px;
-}
-
-tr.project-row.active {
+.weekly-progress {
     background-color: #f8fafc;
-    box-shadow: inset 3px 0 0 #3b82f6;
+    border-radius: 0.5rem;
+    padding: 1rem;
 }

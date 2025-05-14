@@ -187,6 +187,47 @@ function parseCsv(text) {
     return projects;
 }
 
+// Fungsi untuk render weekly progress
+function renderWeeklyProgress(container, weeklyData) {
+    container.innerHTML = weeklyData.map(week => `
+        <div class="bg-white p-4 rounded-lg shadow">
+            <div class="flex justify-between items-center mb-2">
+                <h5 class="font-medium">Week ${week.week_number}</h5>
+                <div class="flex space-x-2">
+                    <button onclick="editWeeklyProgress(${week.id})" class="text-blue-600">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteWeeklyProgress(${week.id})" class="text-red-600">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                    <label>Progress:</label>
+                    <span class="font-medium">${week.progress}%</span>
+                </div>
+                <div>
+                    <label>Status:</label>
+                    <span class="${getWeeklyStatusClass(week.status)} px-2 py-1 rounded-full">
+                        ${week.status}
+                    </span>
+                </div>
+                <div>
+                    <label>Description:</label>
+                    <p class="text-gray-600">${week.description}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Fungsi toggle dropdown
+function toggleDropdown(projectId) {
+    const detailRow = document.querySelector(`tr[data-weekly="${projectId}"]`);
+    detailRow.classList.toggle('hidden');
+}
+
 // Render project list to table
 function renderProjects() {
     const projectsTableBody = document.getElementById('projectsTableBody');
@@ -194,7 +235,6 @@ function renderProjects() {
 
     projects.forEach(project => {
         const row = document.createElement('tr');
-
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
@@ -234,8 +274,36 @@ function renderProjects() {
             </td>
         `;
 
+        row.addEventListener('click', (e) => {
+            if(!e.target.closest('button')) {
+                toggleDropdown(project.id);
+            }
+        });
+
+        const weeklyRow = document.createElement('tr');
+        weeklyRow.className = 'hidden';
+        weeklyRow.setAttribute('data-weekly', project.id);
+        weeklyRow.innerHTML = `
+            <td colspan="6" class="px-6 py-4 bg-gray-50">
+                <div class="weekly-progress">
+                    <h4 class="font-medium mb-4">Weekly Progress</h4>
+                    <div class="space-y-3 weekly-entries" id="weekly-${project.id}"></div>
+                    <button onclick="handleAddWeek(${project.id})" class="mt-4 bg-green-600 text-white px-3 py-1 rounded">
+                        Add Week
+                    </button>
+                </div>
+            </td>
+        `;
+
+        renderWeeklyProgress(weeklyRow.querySelector('.weekly-entries'), project.weekly_progress);
         projectsTableBody.appendChild(row);
+        projectsTableBody.appendChild(weeklyRow);
     });
+}
+
+// Fungsi untuk status badge
+function getWeeklyStatusClass(status) {
+    return status === 'At Risk' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
 }
 
 // Edit project

@@ -89,7 +89,7 @@
                                             <h4 class="font-medium mb-4">Weekly Progress</h4>
                                             <div class="space-y-3 weekly-entries"></div>
                                             <button onclick="handleAddWeek(event)" class="mt-4 bg-green-600 text-white px-3 py-1 rounded">
-                                                Add Week
+                                                Add Progress
                                             </button>
                                         </div>
                                     </td>
@@ -162,6 +162,49 @@
             </form>
         </div>
     </div>
+
+    <!-- Weekly Progress Modal (Dynamic) -->
+    <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-medium text-gray-800">Add Weekly Progress</h3>
+                <button onclick="closeWeeklyModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        
+            <form id="weeklyForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Week Number</label>
+                    <input type="number" id="weekNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                </div>
+            
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
+                    <input type="number" id="weekProgress" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" max="100" required>
+                </div>
+            
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="weekStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        <option value="On Track">On Track</option>
+                        <option value="At Risk">At Risk</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="weekDescription" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="4"></textarea>
+                </div>
+
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg w-full">
+                    Save Progress
+                </button>
+            </form>
+        </div>
+    </div>
+
 
     <script src="{% static 'tracker/js/projects.js' %}"></script>
 

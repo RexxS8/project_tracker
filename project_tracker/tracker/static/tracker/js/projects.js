@@ -1,6 +1,7 @@
 // Project data array
 let projects = [];
 let currentEditId = null;
+let currentProjectId = null;
 
 // Fungsi ambil CSRF Token dari cookie
 function getCookie(name) {
@@ -289,7 +290,7 @@ function renderProjects() {
                     <h4 class="font-medium mb-4">Weekly Progress</h4>
                     <div class="space-y-3 weekly-entries" id="weekly-${project.id}"></div>
                     <button onclick="handleAddWeek(${project.id})" class="mt-4 bg-green-600 text-white px-3 py-1 rounded">
-                        Add Week
+                        Add Progress
                     </button>
                 </div>
             </td>
@@ -374,4 +375,92 @@ async function deleteProject(id) {
         console.error('Error deleting project:', error);
         alert('Failed to delete the project.');
     }
+}
+
+// Handle Add Week
+function handleAddWeek(projectId) {
+    // Buat modal untuk input progress mingguan
+    const modalHtml = `
+        <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-medium text-gray-800">Add Weekly Progress</h3>
+                    <button onclick="closeWeeklyModal()" class="text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="weeklyForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Week Number</label>
+                        <input type="number" id="weekNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
+                        <input type="number" id="weekProgress" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" max="100" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="weekStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                            <option value="On Track">On Track</option>
+                            <option value="At Risk">At Risk</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="weekDescription" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="4"></textarea>
+                    </div>
+
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg w-full">
+                        Save Progress
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+
+    // Tambahkan modal ke body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Event listener untuk form submit
+    const weeklyForm = document.getElementById('weeklyForm');
+    weeklyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const weekData = {
+            week_number: parseInt(document.getElementById('weekNumber').value),
+            progress: parseInt(document.getElementById('weekProgress').value),
+            status: document.getElementById('weekStatus').value,
+            description: document.getElementById('weekDescription').value
+        };
+
+        try {
+            const response = await fetch(`/api/projects/${projectId}/weeks/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(weekData)
+            });
+
+            if (!response.ok) throw new Error('Failed to save weekly progress');
+
+            closeWeeklyModal();
+            fetchProjects();  // Refresh project list
+        } catch (error) {
+            console.error(error);
+            alert('Error submitting weekly progress!');
+        }
+    });
+}
+
+// Close weekly modal
+function closeWeeklyModal() {
+    const modal = document.getElementById('weeklyModal');
+    if (modal) modal.remove();
 }

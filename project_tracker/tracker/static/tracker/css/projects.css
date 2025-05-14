@@ -6,3 +6,6 @@
     border-radius: 0.5rem;
     padding: 1rem;
 }
+.weekly-progress-modal {
+    z-index: 1000;
+}

@@ -44,22 +44,36 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 # Project Model
 class Project(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)  # Tambahkan ini
+    description = models.TextField(blank=True, null=True)  # Optional description
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(max_length=20, choices=[('Not Started', 'Not Started'), ('In Progress', 'In Progress'), ('Completed', 'Completed')])
-    priority = models.CharField(max_length=10, choices=[('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')])
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('Not Started', 'Not Started'),
+            ('In Progress', 'In Progress'),
+            ('Completed', 'Completed')
+        ]
+    )
+    priority = models.CharField(
+        max_length=10,
+        choices=[
+            ('Low', 'Low'),
+            ('Medium', 'Medium'),
+            ('High', 'High')
+        ]
+    )
     progress = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
 
-# Progress Report Model
+# Weekly Progress Model
 class WeeklyProgress(models.Model):
     project = models.ForeignKey(Project, related_name='weekly_progress', on_delete=models.CASCADE)
     week_number = models.PositiveIntegerField()
     progress = models.PositiveIntegerField()
-    description = models.TextField()
+    description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=[('At Risk', 'At Risk'), ('On Track', 'On Track')])
     created_at = models.DateTimeField(auto_now_add=True)
 

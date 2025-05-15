@@ -67,19 +67,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch initial project data
     fetchProjects();
+    
+    // Close weekly modal on outside click
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#weeklyModal')) {
+            e.target.closest('#weeklyModal').remove();
+        }
+    });
 });
 
-// Fetch projects from server
+// Fetch projects from server with cache busting
 async function fetchProjects() {
     try {
-        const response = await fetch('/api/projects/');
+        // Tambahkan timestamp untuk hindari cache
+        const response = await fetch(`/api/projects/?timestamp=${new Date().getTime()}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         projects = data;
         renderProjects();
+        
+        // Debug: Tampilkan data project di console
+        console.log('Fetched projects:', projects);
     } catch (error) {
         console.error('Failed to fetch projects:', error);
+        alert('Gagal memuat data project. Silakan refresh halaman.');
     }
 }
+
 
 // Handle form submit
 async function handleFormSubmit(e) {
@@ -235,6 +249,9 @@ function renderProjects() {
     projectsTableBody.innerHTML = '';
 
     projects.forEach(project => {
+        // Debug: Cek weekly_progress
+        console.log(`Project ${project.id} weekly progress:`, project.weekly_progress);
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap">
@@ -381,8 +398,8 @@ async function deleteProject(id) {
 function handleAddWeek(projectId) {
     // Buat modal untuk input progress mingguan
     const modalHtml = `
-        <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeWeeklyModal(event)">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-medium text-gray-800">Add Weekly Progress</h3>
                     <button onclick="closeWeeklyModal()" class="text-gray-400 hover:text-gray-500">
@@ -431,15 +448,31 @@ function handleAddWeek(projectId) {
     weeklyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const weekNumber = parseInt(document.getElementById('weekNumber').value);
+        const progress = parseInt(document.getElementById('weekProgress').value);
+        const status = document.getElementById('weekStatus').value;
+        const description = document.getElementById('weekDescription').value;
+
+        // Validasi input
+        if (isNaN(weekNumber)) {
+            alert('Week number harus berupa angka');
+            return;
+        }
+        
+        if (progress < 0 || progress > 100) {
+            alert('Progress harus antara 0-100');
+            return;
+        }
+
         const weekData = {
-            week_number: parseInt(document.getElementById('weekNumber').value),
-            progress: parseInt(document.getElementById('weekProgress').value),
-            status: document.getElementById('weekStatus').value,
-            description: document.getElementById('weekDescription').value
+            week_number: weekNumber,
+            progress: progress,
+            status: status,
+            description: description
         };
 
         try {
-            const response = await fetch(`/api/projects/${projectId}/weeks/`, {
+            const response = await fetch(`/api/projects/${projectId}/weekly-progress/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -448,19 +481,29 @@ function handleAddWeek(projectId) {
                 body: JSON.stringify(weekData)
             });
 
-            if (!response.ok) throw new Error('Failed to save weekly progress');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to save weekly progress');
+            }
 
-            closeWeeklyModal();
-            fetchProjects();  // Refresh project list
+            // Tambahkan delay kecil sebelum refresh
+            setTimeout(() => {
+                fetchProjects();  // Refresh project list
+                closeWeeklyModal();
+            }, 300);  // Delay 300ms untuk pastikan database update
+
         } catch (error) {
             console.error(error);
-            alert('Error submitting weekly progress!');
+            alert(`Gagal menyimpan progress: ${error.message}`);
         }
     });
 }
 
 // Close weekly modal
-function closeWeeklyModal() {
-    const modal = document.getElementById('weeklyModal');
-    if (modal) modal.remove();
+function closeWeeklyModal(event) {
+    // Cek jika klik di luar modal
+    if (!event || event.target.id === 'weeklyModal') {
+        const modal = document.getElementById('weeklyModal');
+        if (modal) modal.remove();
+    }
 }

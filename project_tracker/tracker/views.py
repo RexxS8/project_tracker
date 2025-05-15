@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import Project
-from .serializers import ProjectSerializer
+from .serializers import ProjectSerializer, WeeklyProgressSerializer
 from datetime import datetime, timedelta
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
@@ -93,14 +93,16 @@ def projects_view(request):
 
 class ProjectAPI(APIView):
     permission_classes = [IsAuthenticated]
+    
     # GET untuk list semua project atau detail satu project
     def get(self, request, pk=None):
         if pk:
-            project = get_object_or_404(Project, pk=pk)
+            # Gunakan select_related dan prefetch_related untuk optimasi query
+            project = get_object_or_404(Project.objects.prefetch_related('weekly_progress'), pk=pk)
             serializer = ProjectSerializer(project)
             return Response(serializer.data)
         else:
-            projects = Project.objects.all()
+            projects = Project.objects.prefetch_related('weekly_progress').all()
             serializer = ProjectSerializer(projects, many=True)
             return Response(serializer.data)
 
@@ -130,14 +132,25 @@ class ProjectAPI(APIView):
 class WeeklyProgressAPI(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, project_id):
-        weekly_progress = WeeklyProgress.objects.filter(project_id=project_id)
-        serializer = WeeklyProgressSerializer(weekly_progress, many=True)
-        return Response(serializer.data)
-
     def post(self, request, project_id):
+        project = get_object_or_404(Project, pk=project_id)
         serializer = WeeklyProgressSerializer(data=request.data)
+
         if serializer.is_valid():
-            serializer.save(project_id=project_id)
+            # Simpan weekly progress dan hubungkan ke project
+            weekly_progress = serializer.save(project=project)
+
+            # Update project progress berdasarkan rata-rata weekly progress
+            self.update_project_progress(project)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update_project_progress(self, project):
+        """Update progress project berdasarkan rata-rata weekly progress"""
+        weekly_progress = project.weekly_progress.all()
+        if weekly_progress.exists():
+            total = sum([wp.progress for wp in weekly_progress])
+            average = total / len(weekly_progress)
+            project.progress = int(average)
+            project.save()

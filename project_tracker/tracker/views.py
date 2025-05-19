@@ -132,6 +132,14 @@ class ProjectAPI(APIView):
 class WeeklyProgressAPI(APIView):
     permission_classes = [IsAuthenticated]
 
+    # GET untuk list weekly progress dari project tertentu
+    def get(self, request, project_id):
+        project = get_object_or_404(Project, pk=project_id)
+        weekly_progress = project.weekly_progress.all()
+        serializer = WeeklyProgressSerializer(weekly_progress, many=True)
+        return Response(serializer.data)
+
+    # POST untuk menambahkan weekly progress ke project tertentu
     def post(self, request, project_id):
         project = get_object_or_404(Project, pk=project_id)
         serializer = WeeklyProgressSerializer(data=request.data)
@@ -145,12 +153,12 @@ class WeeklyProgressAPI(APIView):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    # PUT untuk update weekly progress
     def update_project_progress(self, project):
         """Update progress project berdasarkan rata-rata weekly progress"""
         weekly_progress = project.weekly_progress.all()
         if weekly_progress.exists():
             total = sum([wp.progress for wp in weekly_progress])
             average = total / len(weekly_progress)
-            project.progress = int(average)
+            project.progress = round(average)
             project.save()

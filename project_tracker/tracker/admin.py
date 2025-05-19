@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.forms import TextInput, Textarea
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser, Project
+from .models import CustomUser, Project, WeeklyProgress
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
@@ -25,5 +24,11 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
+class WeeklyProgressAdmin(admin.ModelAdmin):
+    list_display = ('project', 'week_number', 'status', 'progress')
+    list_filter = ('week_number', 'status')
+    search_fields = ('project__name',)
+
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Project)
+admin.site.register(WeeklyProgress, WeeklyProgressAdmin)

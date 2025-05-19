@@ -79,21 +79,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // Fetch projects from server with cache busting
 async function fetchProjects() {
     try {
-        // Tambahkan timestamp untuk hindari cache
-        const response = await fetch(`/api/projects/?timestamp=${new Date().getTime()}`);
+        const response = await fetch(`/api/projects/`, {
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         projects = data;
         renderProjects();
-        
-        // Debug: Tampilkan data project di console
         console.log('Fetched projects:', projects);
     } catch (error) {
         console.error('Failed to fetch projects:', error);
         alert('Gagal memuat data project. Silakan refresh halaman.');
     }
 }
-
 
 // Handle form submit
 async function handleFormSubmit(e) {
@@ -500,10 +500,7 @@ function handleAddWeek(projectId) {
 }
 
 // Close weekly modal
-function closeWeeklyModal(event) {
-    // Cek jika klik di luar modal
-    if (!event || event.target.id === 'weeklyModal') {
-        const modal = document.getElementById('weeklyModal');
-        if (modal) modal.remove();
-    }
+function closeWeeklyModal() {
+    const modal = document.getElementById('weeklyModal');
+    if (modal) modal.remove();
 }

@@ -2,10 +2,12 @@ from rest_framework import serializers
 from .models import Project, WeeklyProgress
 
 class WeeklyProgressSerializer(serializers.ModelSerializer):
+    project_id = serializers.IntegerField(write_only=True)  # untuk input
+    project_name = serializers.CharField(source="project.name", read_only=True)  # untuk output
+
     class Meta:
         model = WeeklyProgress
-        fields = ['id', 'week_number', 'progress', 'status', 'description', 'created_at']
-
+        fields = ['id', 'project_id', 'project_name', 'week_number', 'progress', 'status', 'description', 'created_at']
 
 class ProjectSerializer(serializers.ModelSerializer):
     weekly_progress = WeeklyProgressSerializer(many=True, read_only=True)

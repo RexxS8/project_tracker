@@ -2,12 +2,18 @@ from rest_framework import serializers
 from .models import Project, WeeklyProgress
 
 class WeeklyProgressSerializer(serializers.ModelSerializer):
-    project_id = serializers.IntegerField(write_only=True)  # untuk input
-    project_name = serializers.CharField(source="project.name", read_only=True)  # untuk output
+    project_name = serializers.CharField(source='project.name', read_only=True)
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, required=False)
 
     class Meta:
         model = WeeklyProgress
-        fields = ['id', 'project_id', 'project_name', 'week_number', 'progress', 'status', 'description', 'created_at']
+        fields = ['id', 'project', 'project_name', 'week_number', 'progress', 'status', 'description', 'created_at']
+
+    def create(self, validated_data):
+        project = self.context.get('project')
+        if not project:
+            project = validated_data.pop('project')  # fallback jika project dikirim via body
+        return WeeklyProgress.objects.create(project=project, **validated_data)
 
 class ProjectSerializer(serializers.ModelSerializer):
     weekly_progress = WeeklyProgressSerializer(many=True, read_only=True)

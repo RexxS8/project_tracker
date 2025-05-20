@@ -504,3 +504,24 @@ function closeWeeklyModal() {
     const modal = document.getElementById('weeklyModal');
     if (modal) modal.remove();
 }
+
+// Edit weekly progress
+function toggleProjectDetails(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    let html = '';
+    if (project.weekly_progress.length > 0) {
+        project.weekly_progress.forEach(wp => {
+            html += `<li>Minggu ${wp.week_number}: ${wp.progress}% - ${wp.status} (${wp.description})</li>`;
+        });
+    } else {
+        html = '<li>Belum ada progress mingguan</li>';
+    }
+    document.getElementById(`details-${projectId}`).innerHTML = html;
+}
+
+// Di akhir file projects.js, tambahkan:
+window.handleAddWeek = handleAddWeek;
+window.editProject = editProject;
+window.deleteProject = deleteProject;
+window.toggleDropdown = toggleDropdown;
+window.closeWeeklyModal = closeWeeklyModal;

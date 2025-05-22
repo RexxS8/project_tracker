@@ -13,6 +13,11 @@ from django.utils import timezone
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from .models import Project, WeeklyProgress
+import logging
+from rest_framework.permissions import AllowAny
+
+# Buat logger
+logger = logging.getLogger(__name__)
 
 @login_required(login_url='/login/')
 def dashboard_view(request):
@@ -130,7 +135,8 @@ class ProjectAPI(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class WeeklyProgressAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
      # GET untuk list weekly progress dari project tertentu
     def get(self, request, project_id):
         """
@@ -142,18 +148,23 @@ class WeeklyProgressAPI(APIView):
         return Response(serializer.data)
      # POST untuk menambahkan weekly progress ke project tertentu
     def post(self, request, project_id):
+        print("\n[WeeklyProgressAPI] Data Diterima:", request.data)
         project = get_object_or_404(Project, pk=project_id)
+        print(f"[WeeklyProgressAPI] Project ID {project_id} ditemukan: {project}")
+    
         serializer = WeeklyProgressSerializer(
             data=request.data,
-            context={'project': project}  # Tambahkan context
+            context={'project': project}
         )
-        
+    
         if serializer.is_valid():
+            print("[WeeklyProgressAPI] Data valid. Menyimpan...")
             serializer.save()
             self._update_project_progress(project)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-            
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print("[WeeklyProgressAPI] Error validasi:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     # PUT untuk update weekly progress
     def _update_project_progress(self, project):
         """

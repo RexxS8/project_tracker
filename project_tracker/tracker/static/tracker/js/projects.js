@@ -396,7 +396,13 @@ async function deleteProject(id) {
 
 // Handle Add Week
 function handleAddWeek(projectId) {
-    // Buat modal untuk input progress mingguan
+    // Hapus modal sebelumnya jika ada
+    const existingModal = document.getElementById('weeklyModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Buat modal HTML
     const modalHtml = `
         <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeWeeklyModal(event)">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
@@ -407,20 +413,20 @@ function handleAddWeek(projectId) {
                     </button>
                 </div>
                 
-                <form id="weeklyForm" class="space-y-4">
+                <form id="weeklyProgressForm" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Week Number</label>
-                        <input type="number" id="weekNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        <input type="number" id="weekNumber" name="week_number" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
-                        <input type="number" id="weekProgress" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" max="100" required>
+                        <input type="number" id="weeklyProgress" name="progress" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" max="100" required>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="weekStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        <select id="weeklyStatus" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                             <option value="On Track">On Track</option>
                             <option value="At Risk">At Risk</option>
                             <option value="Completed">Completed</option>
@@ -429,7 +435,7 @@ function handleAddWeek(projectId) {
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea id="weekDescription" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="4"></textarea>
+                        <textarea id="weeklyDescription" name="description" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="4" required></textarea>
                     </div>
 
                     <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg w-full">
@@ -440,25 +446,23 @@ function handleAddWeek(projectId) {
         </div>
     `;
 
-    // Tambahkan modal ke body
+    // Masukkan modal ke dalam body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Event listener untuk form submit
-    const weeklyForm = document.getElementById('weeklyForm');
+    // Tangani submit form
+    const weeklyForm = document.getElementById('weeklyProgressForm');
     weeklyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const weekNumber = parseInt(document.getElementById('weekNumber').value);
-        const progress = parseInt(document.getElementById('weekProgress').value);
-        const status = document.getElementById('weekStatus').value;
-        const description = document.getElementById('weekDescription').value;
+        const progress = parseInt(document.getElementById('weeklyProgress').value);
+        const status = document.getElementById('weeklyStatus').value;
+        const description = document.getElementById('weeklyDescription').value;
 
-        // Validasi input
         if (isNaN(weekNumber)) {
             alert('Week number harus berupa angka');
             return;
         }
-        
         if (progress < 0 || progress > 100) {
             alert('Progress harus antara 0-100');
             return;
@@ -476,21 +480,19 @@ function handleAddWeek(projectId) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
+                    'X-CSRFToken': getCookie('csrftoken')  // CSRF token penting
                 },
                 body: JSON.stringify(weekData)
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.detail || 'Failed to save weekly progress');
+                throw new Error(errorData.detail || 'Gagal menyimpan progress');
             }
 
-            // Tambahkan delay kecil sebelum refresh
-            setTimeout(() => {
-                fetchProjects();  // Refresh project list
-                closeWeeklyModal();
-            }, 300);  // Delay 300ms untuk pastikan database update
+            alert('Progress berhasil disimpan!');
+            closeWeeklyModal();
+            await fetchProjects();  // Refresh project list
 
         } catch (error) {
             console.error(error);
@@ -500,9 +502,11 @@ function handleAddWeek(projectId) {
 }
 
 // Close weekly modal
-function closeWeeklyModal() {
-    const modal = document.getElementById('weeklyModal');
-    if (modal) modal.remove();
+function closeWeeklyModal(event) {
+    if (!event || event.target.id === 'weeklyModal') {
+        const modal = document.getElementById('weeklyModal');
+        if (modal) modal.remove();
+    }
 }
 
 // Edit weekly progress

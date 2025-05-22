@@ -3,7 +3,7 @@ from .models import Project, WeeklyProgress
 
 class WeeklyProgressSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.name', read_only=True)
-    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), write_only=True, required=False)
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), required=False)
 
     class Meta:
         model = WeeklyProgress

@@ -33,6 +33,7 @@ AUTH_USER_MODEL = 'tracker.CustomUser' # Ganti 'tracker' dengan nama app kamu ji
 # Application definition
 
 INSTALLED_APPS = [
+    'whitenoise.runserver_nostatic',  # Gunakan whitenoise untuk static files
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Middleware untuk static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

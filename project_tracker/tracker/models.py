@@ -44,7 +44,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 # Project Model
 class Project(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)  # Optional description
     start_date = models.DateField()
     end_date = models.DateField()
     status = models.CharField(
@@ -63,7 +62,12 @@ class Project(models.Model):
             ('High', 'High')
         ]
     )
-    progress = models.PositiveIntegerField(default=0)
+    man_power = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="List nama orang yang terlibat (pisahkan dengan koma)"
+    )
+    
 
     def __str__(self):
         return self.name
@@ -72,10 +76,26 @@ class Project(models.Model):
 class WeeklyProgress(models.Model):
     project = models.ForeignKey(Project, related_name='weekly_progress', on_delete=models.CASCADE)
     week_number = models.PositiveIntegerField()
-    progress = models.PositiveIntegerField()
-    description = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=[('At Risk', 'At Risk'), ('On Track', 'On Track')])
+    task_description = models.CharField(max_length=255)  # Tambahkan
+    target_completion = models.PositiveIntegerField()  # Tambahkan
+    submitted_task = models.PositiveIntegerField(default=0)  # Tambahkan
+    revised = models.PositiveIntegerField(default=0)  # Tambahkan
+    approved_task_by_comments = models.PositiveIntegerField(default=0)  # Tambahkan
+    approved_task = models.PositiveIntegerField(default=0)  # Tambahkan
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Property untuk nilai persentase
+    @property
+    def submitted_task_percent(self):
+        if self.target_completion == 0:
+            return 0
+        return round((self.submitted_task / self.target_completion) * 100, 2)
+    
+    @property
+    def approved_task_percent(self):
+        if self.target_completion == 0:
+            return 0
+        return round((self.approved_task / self.target_completion) * 100, 2)
 
     def __str__(self):
         return f"Week {self.week_number} - {self.project.name}"

@@ -99,13 +99,17 @@ async function fetchProjects() {
 async function handleFormSubmit(e) {
     e.preventDefault();
 
+    const manPowerSelect = document.getElementById('manPower');
+    const selectedManPower = Array.from(manPowerSelect.selectedOptions).map(opt => opt.value);
+
     const projectData = {
         name: document.getElementById('projectName').value,
         start_date: document.getElementById('startDate').value,
         end_date: document.getElementById('endDate').value,
         status: document.getElementById('status').value,
         priority: document.getElementById('priority').value,
-        progress: parseInt(document.getElementById('progress').value)
+        progress: parseInt(document.getElementById('progress').value),
+        man_power: selectedManPower // ✅ kirim dalam bentuk array
     };
 
     try {
@@ -205,35 +209,24 @@ function parseCsv(text) {
 // Fungsi untuk render weekly progress
 function renderWeeklyProgress(container, weeklyData) {
     container.innerHTML = weeklyData.map(week => `
-        <div class="bg-white p-4 rounded-lg shadow">
-            <div class="flex justify-between items-center mb-2">
-                <h5 class="font-medium">Week ${week.week_number}</h5>
-                <div class="flex space-x-2">
-                    <button onclick="editWeeklyProgress(${week.id})" class="text-blue-600">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteWeeklyProgress(${week.id})" class="text-red-600">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                    <label>Progress:</label>
-                    <span class="font-medium">${week.progress}%</span>
-                </div>
-                <div>
-                    <label>Status:</label>
-                    <span class="${getWeeklyStatusClass(week.status)} px-2 py-1 rounded-full">
-                        ${week.status}
-                    </span>
-                </div>
-                <div>
-                    <label>Description:</label>
-                    <p class="text-gray-600">${week.description}</p>
-                </div>
-            </div>
-        </div>
+        <tr>
+            <td class="py-2 px-4 border-b">${week.task_description}</td>
+            <td class="py-2 px-4 border-b text-center">${week.target_completion}</td>
+            <td class="py-2 px-4 border-b text-center">${week.submitted_task}</td>
+            <td class="py-2 px-4 border-b text-center">${week.revised}</td>
+            <td class="py-2 px-4 border-b text-center">${week.submitted_task_percent}%</td>
+            <td class="py-2 px-4 border-b text-center">${week.approved_task_by_comments}</td>
+            <td class="py-2 px-4 border-b text-center">${week.approved_task}</td>
+            <td class="py-2 px-4 border-b text-center">${week.approved_task_percent}%</td>
+            <td class="py-2 px-4 border-b text-center">
+                <button onclick="editWeeklyProgress(${week.id})" class="text-blue-600 mr-2">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteWeeklyProgress(${week.id})" class="text-red-600">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
     `).join('');
 }
 
@@ -342,6 +335,7 @@ function editProject(id) {
     document.getElementById('status').value = project.status;
     document.getElementById('priority').value = project.priority;
     document.getElementById('progress').value = project.progress;
+    document.getElementById('manPower').value = project.man_power || ''; // 🆕 Tambahkan ini
     progressValue.textContent = `${project.progress}%`;
 
     document.getElementById('projectModal').classList.remove('hidden');
@@ -418,12 +412,37 @@ function handleAddWeek(projectId) {
                         <label class="block text-sm font-medium text-gray-700 mb-1">Week Number</label>
                         <input type="number" id="weekNumber" name="week_number" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
-                        <input type="number" id="weeklyProgress" name="progress" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" max="100" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                        <input type="text" id="taskDescription" name="task_description" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
                     </div>
-                    
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Completion</label>
+                        <input type="number" id="targetCompletion" name="target_completion" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="1" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Submitted Task</label>
+                        <input type="number" id="submittedTask" name="submitted_task" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Revised</label>
+                        <input type="number" id="revised" name="revised" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Approved by Comments</label>
+                        <input type="number" id="approvedByComments" name="approved_task_by_comments" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Approved Task</label>
+                        <input type="number" id="approvedTask" name="approved_task" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select id="weeklyStatus" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
@@ -454,33 +473,26 @@ function handleAddWeek(projectId) {
     weeklyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const weekNumber = parseInt(document.getElementById('weekNumber').value);
-        const progress = parseInt(document.getElementById('weeklyProgress').value);
-        const status = document.getElementById('weeklyStatus').value;
-        const description = document.getElementById('weeklyDescription').value;
-
-        if (isNaN(weekNumber)) {
-            alert('Week number harus berupa angka');
-            return;
-        }
-        if (progress < 0 || progress > 100) {
-            alert('Progress harus antara 0-100');
-            return;
-        }
-
         const weekData = {
-            week_number: weekNumber,
-            progress: progress,
-            status: status,
-            description: description
+            week_number: parseInt(document.getElementById('weekNumber').value),
+            task_description: document.getElementById('taskDescription').value,
+            target_completion: parseInt(document.getElementById('targetCompletion').value),
+            submitted_task: parseInt(document.getElementById('submittedTask').value),
+            revised: parseInt(document.getElementById('revised').value),
+            approved_task_by_comments: parseInt(document.getElementById('approvedByComments').value),
+            approved_task: parseInt(document.getElementById('approvedTask').value),
+            status: document.getElementById('weeklyStatus').value,
+            description: document.getElementById('weeklyDescription').value
         };
+
+        // Validasi opsional tambahan bisa ditambahkan di sini...
 
         try {
             const response = await fetch(`/api/projects/${projectId}/weekly-progress/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')  // CSRF token penting
+                    'X-CSRFToken': getCookie('csrftoken') // pastikan fungsi getCookie tersedia
                 },
                 body: JSON.stringify(weekData)
             });
@@ -492,7 +504,7 @@ function handleAddWeek(projectId) {
 
             alert('Progress berhasil disimpan!');
             closeWeeklyModal();
-            await fetchProjects();  // Refresh project list
+            await fetchProjects(); // refresh list proyek
 
         } catch (error) {
             console.error(error);

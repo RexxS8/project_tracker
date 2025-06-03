@@ -20,13 +20,16 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'fields': (
+                'email', 'first_name', 'last_name', 'password1', 'password2',
+                'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'
+            ),
         }),
     )
 
 class WeeklyProgressAdmin(admin.ModelAdmin):
-    list_display = ('project', 'week_number', 'status', 'progress')
-    list_filter = ('week_number', 'status')
+    list_display = ('project', 'week_number', 'submitted_task', 'approved_task', 'created_at')
+    list_filter = ('week_number',)
     search_fields = ('project__name',)
 
 admin.site.register(CustomUser, CustomUserAdmin)

@@ -13,6 +13,7 @@ from django.utils import timezone
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from .models import Project, WeeklyProgress
+from .models import ManPower
 import logging
 from rest_framework.permissions import AllowAny
 
@@ -88,10 +89,14 @@ def login_view(request):
 def projects_view(request):
     # Ambil semua project dari database
     projects = Project.objects.all()
+    
+    # Ambil semua man power dari database
+    man_power_list = ManPower.objects.all()
 
-    # Kirim data project ke template
+    # Kirim data project dan man power ke template
     context = {
-        'projects': projects
+        'projects': projects,
+        'man_power_list': man_power_list
     }
 
     return render(request, 'tracker/projects.html', context)
@@ -116,6 +121,14 @@ class ProjectAPI(APIView):
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
             project = serializer.save()
+            # Tambahkan man power
+            man_power_ids = request.data.get('man_power', [])
+            for mp_id in man_power_ids:
+                try:
+                    mp = ManPower.objects.get(pk=mp_id)
+                    project.man_power.add(mp)
+                except ManPower.DoesNotExist:
+                    pass
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

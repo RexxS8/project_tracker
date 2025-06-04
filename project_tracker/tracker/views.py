@@ -117,13 +117,10 @@ class ProjectAPI(APIView):
         if serializer.is_valid():
             project = serializer.save()
             # Tambahkan man power
-            man_power_ids = request.data.get('man_power', [])
-            for mp_id in man_power_ids:
-                try:
-                    mp = ManPower.objects.get(pk=mp_id)
-                    project.man_power.add(mp)
-                except ManPower.DoesNotExist:
-                    pass
+            man_power_list = request.data.get('man_power', [])
+            if isinstance(man_power_list, list):
+                project.man_power = ", ".join(man_power_list)
+                project.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

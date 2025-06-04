@@ -100,7 +100,10 @@ async function handleFormSubmit(e) {
     e.preventDefault();
 
     const manPowerSelect = document.getElementById('manPower');
-    const selectedManPower = Array.from(manPowerSelect.selectedOptions).map(opt => opt.value);
+    const selectedManPower = manPowerSelect.value
+        .split(',')
+        .map(name => name.trim())
+        .filter(Boolean);
 
     const projectData = {
         name: document.getElementById('projectName').value,
@@ -109,7 +112,7 @@ async function handleFormSubmit(e) {
         status: document.getElementById('status').value,
         priority: document.getElementById('priority').value,
         progress: parseInt(document.getElementById('progress').value),
-        man_power: selectedManPower // ✅ kirim dalam bentuk array
+        man_power: selectedManPower.join(', ') // ✅ kirim dalam bentuk array
     };
 
     try {

@@ -13,6 +13,15 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- FullCalendar -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <div class="flex h-screen">
@@ -35,6 +44,10 @@
                     <a href="{% url 'projects' %}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100">
                         <i class="fas fa-folder"></i>
                         <span class="text-sm font-medium">Projects</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-600">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span class="text-sm font-medium">Minutes of Meeting</span>
                     </a>
                 </nav>
             </div>

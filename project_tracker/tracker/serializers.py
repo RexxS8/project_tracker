@@ -24,13 +24,10 @@ class WeeklyProgressSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         project = self.context.get('project')
-        if not project:
-            project = validated_data.pop('project', None)
         return WeeklyProgress.objects.create(project=project, **validated_data)
 
 class ProjectSerializer(serializers.ModelSerializer):
     weekly_progress = WeeklyProgressSerializer(many=True, read_only=True)
-    man_power = serializers.SerializerMethodField()
 
     class Meta:
         model = Project

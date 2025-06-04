@@ -210,6 +210,7 @@ function parseCsv(text) {
 function renderWeeklyProgress(container, weeklyData) {
     container.innerHTML = weeklyData.map(week => `
         <tr>
+            <td class="py-2 px-4 border-b">${week.week_number}</td>
             <td class="py-2 px-4 border-b">${week.task_description}</td>
             <td class="py-2 px-4 border-b text-center">${week.target_completion}</td>
             <td class="py-2 px-4 border-b text-center">${week.submitted_task}</td>
@@ -234,6 +235,13 @@ function renderWeeklyProgress(container, weeklyData) {
 function toggleDropdown(projectId) {
     const detailRow = document.querySelector(`tr[data-weekly="${projectId}"]`);
     detailRow.classList.toggle('hidden');
+    
+    // Tampilkan Man Power
+    const project = projects.find(p => p.id == projectId);
+    const manPowerEl = detailRow.querySelector('.man-power-info');
+    if (manPowerEl) {
+        manPowerEl.innerHTML = project.man_power || 'No man power assigned';
+    }
 }
 
 // Render project list to table
@@ -242,7 +250,6 @@ function renderProjects() {
     projectsTableBody.innerHTML = '';
 
     projects.forEach(project => {
-        // Debug: Cek weekly_progress
         console.log(`Project ${project.id} weekly progress:`, project.weekly_progress);
 
         const row = document.createElement('tr');
@@ -286,7 +293,7 @@ function renderProjects() {
         `;
 
         row.addEventListener('click', (e) => {
-            if(!e.target.closest('button')) {
+            if (!e.target.closest('button')) {
                 toggleDropdown(project.id);
             }
         });
@@ -297,8 +304,34 @@ function renderProjects() {
         weeklyRow.innerHTML = `
             <td colspan="6" class="px-6 py-4 bg-gray-50">
                 <div class="weekly-progress">
+                    <div class="man-power-info bg-blue-50 p-3 rounded-lg mb-4">
+                        <p class="text-sm text-gray-700">
+                            <strong>Man Power:</strong><br>
+                            ${Array.isArray(project.man_power) ? project.man_power.join(', ') : (project.man_power || 'No man power assigned')}
+                        </p>
+                    </div>
                     <h4 class="font-medium mb-4">Weekly Progress</h4>
-                    <div class="space-y-3 weekly-entries" id="weekly-${project.id}"></div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="py-2 px-4 border-b">Week</th>
+                                    <th class="py-2 px-4 border-b">Task Description</th>
+                                    <th class="py-2 px-4 border-b">Target Completion</th>
+                                    <th class="py-2 px-4 border-b">Submitted Task</th>
+                                    <th class="py-2 px-4 border-b">Revised</th>
+                                    <th class="py-2 px-4 border-b">Submitted Task (%)</th>
+                                    <th class="py-2 px-4 border-b">Approved by Comments</th>
+                                    <th class="py-2 px-4 border-b">Approved Task</th>
+                                    <th class="py-2 px-4 border-b">Approved Task (%)</th>
+                                    <th class="py-2 px-4 border-b">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="weekly-entries" id="weekly-${project.id}">
+                                <!-- Weekly entries will be rendered here -->
+                            </tbody>
+                        </table>
+                    </div>
                     <button onclick="handleAddWeek(${project.id})" class="mt-4 bg-green-600 text-white px-3 py-1 rounded">
                         Add Progress
                     </button>
@@ -306,7 +339,9 @@ function renderProjects() {
             </td>
         `;
 
+        // Render data weekly langsung
         renderWeeklyProgress(weeklyRow.querySelector('.weekly-entries'), project.weekly_progress);
+
         projectsTableBody.appendChild(row);
         projectsTableBody.appendChild(weeklyRow);
     });
@@ -390,85 +425,68 @@ async function deleteProject(id) {
 
 // Handle Add Week
 function handleAddWeek(projectId) {
-    // Hapus modal sebelumnya jika ada
-    const existingModal = document.getElementById('weeklyModal');
-    if (existingModal) {
-        existingModal.remove();
+    if (!projectId || isNaN(projectId)) {
+        console.error("Invalid projectId:", projectId);
+        return;
     }
 
-    // Buat modal HTML
+    // Hapus modal lama jika ada
+    const existingModal = document.getElementById('weeklyModal');
+    if (existingModal) existingModal.remove();
+
+    // Modal HTML
     const modalHtml = `
         <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeWeeklyModal(event)">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6" onclick="event.stopPropagation()">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-medium text-gray-800">Add Weekly Progress</h3>
                     <button onclick="closeWeeklyModal()" class="text-gray-400 hover:text-gray-500">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
+
                 <form id="weeklyProgressForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Week Number</label>
-                        <input type="number" id="weekNumber" name="week_number" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Week Number</label>
+                            <input type="number" id="weekNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                            <input type="text" id="taskDescription" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Target Completion</label>
+                            <input type="number" id="targetCompletion" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Submitted Task</label>
+                            <input type="number" id="submittedTask" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Revised</label>
+                            <input type="number" id="revised" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Approved by Comments</label>
+                            <input type="number" id="approvedByComments" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Approved Task</label>
+                            <input type="number" id="approvedTask" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
-                        <input type="text" id="taskDescription" name="task_description" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Completion</label>
-                        <input type="number" id="targetCompletion" name="target_completion" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="1" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Submitted Task</label>
-                        <input type="number" id="submittedTask" name="submitted_task" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Revised</label>
-                        <input type="number" id="revised" name="revised" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Approved by Comments</label>
-                        <input type="number" id="approvedByComments" name="approved_task_by_comments" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Approved Task</label>
-                        <input type="number" id="approvedTask" name="approved_task" class="w-full px-3 py-2 border border-gray-300 rounded-md" min="0" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="weeklyStatus" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-                            <option value="On Track">On Track</option>
-                            <option value="At Risk">At Risk</option>
-                            <option value="Completed">Completed</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea id="weeklyDescription" name="description" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="4" required></textarea>
-                    </div>
-
-                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg w-full">
-                        Save Progress
-                    </button>
+                    <button type="submit" class="bg-green-600 text-white w-full py-2 rounded">Save Progress</button>
                 </form>
             </div>
         </div>
     `;
 
-    // Masukkan modal ke dalam body
+    // Masukkan modal ke halaman
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Tangani submit form
+    // Tangani form submit
     const weeklyForm = document.getElementById('weeklyProgressForm');
     weeklyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -481,36 +499,51 @@ function handleAddWeek(projectId) {
             revised: parseInt(document.getElementById('revised').value),
             approved_task_by_comments: parseInt(document.getElementById('approvedByComments').value),
             approved_task: parseInt(document.getElementById('approvedTask').value),
-            status: document.getElementById('weeklyStatus').value,
-            description: document.getElementById('weeklyDescription').value
         };
-
-        // Validasi opsional tambahan bisa ditambahkan di sini...
 
         try {
             const response = await fetch(`/api/projects/${projectId}/weekly-progress/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken') // pastikan fungsi getCookie tersedia
+                    'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify(weekData)
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Gagal menyimpan progress');
+                const errorText = await response.text();
+                throw new Error(`Failed to submit weekly progress: ${response.statusText} - ${errorText}`);
             }
 
-            alert('Progress berhasil disimpan!');
-            closeWeeklyModal();
-            await fetchProjects(); // refresh list proyek
+            const newEntry = await response.json();
+            const weeklyContainer = document.querySelector(`#weekly-${projectId}`);
+            if (weeklyContainer && typeof renderSingleWeeklyEntry === 'function') {
+                renderSingleWeeklyEntry(weeklyContainer, newEntry);
+            }
 
+            closeWeeklyModal();
+            location.reload();
         } catch (error) {
+            alert('Failed to submit weekly progress: ' + error.message);
             console.error(error);
-            alert(`Gagal menyimpan progress: ${error.message}`);
         }
     });
+}
+
+// Fungsi bantu render single entry baru (tanpa reload semua)
+function renderSingleWeeklyEntry(container, entry) {
+    const div = document.createElement('div');
+    const manPowerValue = document.getElementById('manPower').value;
+    div.className = "p-4 bg-white rounded shadow border";
+    div.innerHTML = `
+        <div><strong>Week ${entry.week_number}:</strong> ${entry.task_description}</div>
+        <div>Target: ${entry.target_completion}, Submitted: ${entry.submitted_task}</div>
+        <div>Revised: ${entry.revised}, Approved by Comments: ${entry.approved_task_by_comments}, Approved: ${entry.approved_task}</div>
+        <div>Status: ${entry.status}</div>
+        <div>${entry.description}</div>
+    `;
+    container.appendChild(div);
 }
 
 // Close weekly modal

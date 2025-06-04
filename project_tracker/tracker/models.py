@@ -62,7 +62,9 @@ class Project(models.Model):
             ('High', 'High')
         ]
     )
-    man_power = models.TextField(
+    progress = models.PositiveIntegerField(default=0)
+    man_power = models.CharField(
+        max_length=255,
         blank=True, 
         null=True,
         help_text="List nama orang yang terlibat (pisahkan dengan koma)"

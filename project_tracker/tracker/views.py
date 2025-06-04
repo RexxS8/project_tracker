@@ -13,7 +13,6 @@ from django.utils import timezone
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from .models import Project, WeeklyProgress
-from .models import ManPower
 import logging
 from rest_framework.permissions import AllowAny
 
@@ -89,14 +88,10 @@ def login_view(request):
 def projects_view(request):
     # Ambil semua project dari database
     projects = Project.objects.all()
-    
-    # Ambil semua man power dari database
-    man_power_list = ManPower.objects.all()
 
     # Kirim data project dan man power ke template
     context = {
-        'projects': projects,
-        'man_power_list': man_power_list
+        'projects': projects
     }
 
     return render(request, 'tracker/projects.html', context)
@@ -159,33 +154,27 @@ class WeeklyProgressAPI(APIView):
         weekly_progress = project.weekly_progress.all()
         serializer = WeeklyProgressSerializer(weekly_progress, many=True)
         return Response(serializer.data)
-     # POST untuk menambahkan weekly progress ke project tertentu
+    # POST untuk menambahkan weekly progress ke project tertentu
     def post(self, request, project_id):
-        print("\n[WeeklyProgressAPI] Data Diterima:", request.data)
-        project = get_object_or_404(Project, pk=project_id)
-        print(f"[WeeklyProgressAPI] Project ID {project_id} ditemukan: {project}")
-    
-        serializer = WeeklyProgressSerializer(
-            data=request.data,
-            context={'project': project}
-        )
-    
-        if serializer.is_valid():
-            print("[WeeklyProgressAPI] Data valid. Menyimpan...")
-            serializer.save()
-            self._update_project_progress(project)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            print("[WeeklyProgressAPI] Error validasi:", serializer.errors)
+        try:
+            # Pastikan data dalam format JSON
+            if isinstance(request.data, str):
+                data = json.loads(request.data)
+            else:
+                data = request.data
+                
+            project = get_object_or_404(Project, pk=project_id)
+            serializer = WeeklyProgressSerializer(
+                data=data,
+                context={'project': project}
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    # PUT untuk update weekly progress
-    def _update_project_progress(self, project):
-        """
-        Mengupdate nilai progress dari project berdasarkan rata-rata dari semua weekly progress.
-        """
-        weekly_progress = project.weekly_progress.all()
-        if weekly_progress.exists():
-            total = sum([wp.progress for wp in weekly_progress])
-            average = total / weekly_progress.count()
-            project.progress = round(average)
-            project.save()
+            
+        except Exception as e:
+            logger.exception("Error in WeeklyProgressAPI")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
-from .models import CustomUser, Project, WeeklyProgress
+from .models import CustomUser, Project, WeeklyProgress, MeetingWeek, MinutesOfMeeting
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
@@ -54,6 +54,23 @@ class WeeklyProgressAdmin(admin.ModelAdmin):
     list_filter = ('week_number',)
     search_fields = ('project__name',)
 
+class MinutesOfMeetingInline(admin.TabularInline):
+    model = MinutesOfMeeting
+    extra = 1  # Berapa banyak form kosong yang disediakan untuk tambah langsung
+
+class MeetingWeekAdmin(admin.ModelAdmin):
+    list_display = ('project', 'week_number', 'name', 'created_at')
+    list_filter = ('project', 'week_number')
+    search_fields = ('project__name', 'name')
+    inlines = [MinutesOfMeetingInline]  # Menambahkan inline editing untuk MoM
+
+class MinutesOfMeetingAdmin(admin.ModelAdmin):
+    list_display = ('week', 'date', 'pic', 'status', 'created_at', 'updated_at')
+    list_filter = ('status', 'date')
+    search_fields = ('pic', 'description')
+
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(WeeklyProgress, WeeklyProgressAdmin)
+admin.site.register(MeetingWeek, MeetingWeekAdmin)
+admin.site.register(MinutesOfMeeting, MinutesOfMeetingAdmin)

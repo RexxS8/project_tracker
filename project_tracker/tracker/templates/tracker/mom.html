@@ -18,6 +18,7 @@
     </style>
 </head>
 <body class="bg-gray-50">
+    {% csrf_token %}
     <div class="flex h-screen">
         <!-- Sidebar -->
         <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -30,15 +31,15 @@
                 </div>
 
                 <nav class="space-y-1">
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <a href="{% url 'index' %}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100">
                         <i class="fas fa-home"></i>
                         <span class="text-sm font-medium">Dashboard</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <a href="{% url 'projects' %}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100">
                         <i class="fas fa-folder"></i>
                         <span class="text-sm font-medium">Projects</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-600">
+                    <a href="{% url 'mom_view' %}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100">
                         <i class="fas fa-clipboard-list"></i>
                         <span class="text-sm font-medium">Minutes of Meeting</span>
                     </a>
@@ -226,7 +227,6 @@
         </div>
     </div>
 
-    <script src="project_tracker/tracker/static/tracker/js/mom.js"></script>
     <script src="{% static 'tracker/js/mom.js' %}?v=1.1"></script>
 </body>
 </html>

@@ -101,3 +101,35 @@ class WeeklyProgress(models.Model):
 
     def __str__(self):
         return f"Week {self.week_number} - {self.project.name}"
+
+ # Meeting Week Model   
+class MeetingWeek(models.Model):
+    project = models.ForeignKey(Project, related_name='meeting_weeks', on_delete=models.CASCADE)
+    week_number = models.PositiveIntegerField()
+    name = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Week {self.week_number} - {self.project.name}"
+
+# Minutes of Meeting Model
+class MinutesOfMeeting(models.Model):
+    week = models.ForeignKey(MeetingWeek, related_name='meetings', on_delete=models.CASCADE)
+    date = models.DateField()
+    pic = models.CharField(max_length=100)  # Person in charge
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('Open', 'Open'),
+            ('In Progress', 'In Progress'),
+            ('Closed', 'Closed')
+        ],
+        default='Open'
+    )
+    description = models.TextField()
+    documents = models.JSONField(default=list, blank=True)  # Store list of document metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"MOM for {self.week} on {self.date}"

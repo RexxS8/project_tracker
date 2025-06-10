@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, WeeklyProgress
+from .models import Project, WeeklyProgress, MeetingWeek, MinutesOfMeeting
 
 class WeeklyProgressSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source='project.name', read_only=True)
@@ -25,13 +25,42 @@ class WeeklyProgressSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         project = self.context.get('project')
         return WeeklyProgress.objects.create(project=project, **validated_data)
+    
+class MinutesOfMeetingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MinutesOfMeeting
+        fields = '__all__'
+        read_only_fields = ('created_at', 'updated_at')
+
+class FileSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    size = serializers.IntegerField()
+    url = serializers.URLField()
+
+class MeetingWeekSerializer(serializers.ModelSerializer):
+    meetings = MinutesOfMeetingSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = MeetingWeek
+        fields = ['id', 'project', 'week_number', 'name', 'created_at', 'meetings']
+        extra_kwargs = {
+            'project': {'required': False}
+        }
 
 class ProjectSerializer(serializers.ModelSerializer):
     weekly_progress = WeeklyProgressSerializer(many=True, read_only=True)
+    man_power_list = serializers.SerializerMethodField()
+    meeting_weeks = MeetingWeekSerializer(many=True, read_only=True)  # TAMBAHKAN INI
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'start_date', 'end_date', 'status', 'priority', 'progress', 'weekly_progress', 'man_power']
+        fields = [
+            'id', 'name', 'start_date', 'end_date', 'status', 'priority',
+            'progress', 'weekly_progress', 'man_power', 'man_power_list', 'meeting_weeks'
+        ]
 
-    def get_man_power(self, obj):
-        return [mp.name for mp in obj.man_power.all()]
+    def get_man_power_list(self, obj):
+        if obj.man_power:
+            # Misal man_power adalah string 'Andri, Budi, Cici'
+            return [name.strip() for name in obj.man_power.split(',')]
+        return []

@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.validators import MinValueValidator
 from django.db import models
 
 # Custom User Manager
@@ -70,6 +71,10 @@ class Project(models.Model):
         help_text="List nama orang yang terlibat (pisahkan dengan koma)"
     )
     
+    def get_total_moms_count(self):
+        """Menghitung total MOMs dari semua meeting week terkait."""
+        # Ini adalah cara yang lebih efisien daripada menghitung di frontend
+        return MinutesOfMeeting.objects.filter(week__project=self).count()
 
     def __str__(self):
         return self.name
@@ -105,9 +110,12 @@ class WeeklyProgress(models.Model):
  # Meeting Week Model   
 class MeetingWeek(models.Model):
     project = models.ForeignKey(Project, related_name='meeting_weeks', on_delete=models.CASCADE)
-    week_number = models.PositiveIntegerField()
+    week_number = models.PositiveIntegerField(validators=[MinValueValidator(1)])  # Tambah validasi
     name = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['project', 'week_number']  # Pastikan week number unik per project
 
     def __str__(self):
         return f"Week {self.week_number} - {self.project.name}"

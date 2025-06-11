@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 import os
 from django.conf import settings
+from rest_framework import generics
 
 # Buat logger
 logger = logging.getLogger(__name__)
@@ -101,7 +102,8 @@ def projects_view(request):
     return render(request, 'tracker/projects.html', context)
 
 class ProjectAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     # GET untuk list semua project atau detail satu project
     def get(self, request, pk=None):
@@ -185,39 +187,43 @@ def mom_view(request):
     return render(request, 'tracker/mom.html')
 
 # Create API views for MeetingWeek and MinutesOfMeeting
-class MeetingWeekAPI(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request, project_id):
-        weeks = MeetingWeek.objects.filter(project_id=project_id)
-        serializer = MeetingWeekSerializer(weeks, many=True)
-        return Response(serializer.data)
-    
-    def post(self, request, project_id):
-        project = get_object_or_404(Project, pk=project_id)
-        serializer = MeetingWeekSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(project=project)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class MeetingWeekAPI(generics.ListCreateAPIView):
+    serializer_class = MeetingWeekSerializer
+    permission_classes = [AllowAny] # Sesuaikan jika perlu
+
+    def get_queryset(self):
+        """
+        Secara dinamis memfilter queryset berdasarkan project_id dari URL.
+        """
+        project_id = self.kwargs.get('project_id')
+        return MeetingWeek.objects.filter(project_id=project_id)
+
+    def perform_create(self, serializer):
+        """
+        Secara otomatis menyuntikkan objek Project ke dalam serializer saat menyimpan.
+        Ini adalah perbaikan utama untuk error "Project context is missing".
+        """
+        project = get_object_or_404(Project, pk=self.kwargs.get('project_id'))
+        serializer.save(project=project)
 
 # Create API views for MeetingWeek and MinutesOfMeeting
 class MeetingWeekDetailAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def put(self, request, week_id):
         week = get_object_or_404(MeetingWeek, pk=week_id)
-        serializer = MeetingWeekSerializer(week, data=request.data, partial=True)
+        serializer = MeetingWeekSerializer(
+            week, 
+            data=request.data, 
+            partial=True
+        )
+        
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        # Tambahkan logging untuk debug
-        logger.error(f"Invalid week data: {request.data}")
-        logger.error(f"Validation errors: {serializer.errors}")
-        return Response(
-            {"error": "Invalid week data", "details": serializer.errors},
-            status=status.HTTP_400_BAD_REQUEST
-        )    
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, week_id):
         week = get_object_or_404(MeetingWeek, pk=week_id)
@@ -225,7 +231,8 @@ class MeetingWeekDetailAPI(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class MinutesOfMeetingAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get(self, request, week_id):
         moms = MinutesOfMeeting.objects.filter(week_id=week_id)
@@ -234,14 +241,20 @@ class MinutesOfMeetingAPI(APIView):
     
     def post(self, request, week_id):
         week = get_object_or_404(MeetingWeek, pk=week_id)
-        serializer = MinutesOfMeetingSerializer(data=request.data)
+        
+        # Tambahkan week_id ke data
+        data = request.data.copy()
+        data['week'] = week_id
+        
+        serializer = MinutesOfMeetingSerializer(data=data)
         if serializer.is_valid():
             serializer.save(week=week)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MinutesOfMeetingDetailAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def put(self, request, mom_id):
         mom = get_object_or_404(MinutesOfMeeting, pk=mom_id)
@@ -257,28 +270,27 @@ class MinutesOfMeetingDetailAPI(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class FileUploadAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def post(self, request):
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create media directory if not exists
         media_dir = os.path.join(settings.MEDIA_ROOT, 'moms')
         os.makedirs(media_dir, exist_ok=True)
         
-        # Save file
         file_path = os.path.join(media_dir, uploaded_file.name)
         with open(file_path, 'wb+') as destination:
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
         
-        # Return file metadata
+        # Kembalikan file metadata
         file_info = {
             'name': uploaded_file.name,
             'size': uploaded_file.size,
-            'url': f'/media/moms/{uploaded_file.name}'
+            # GANTI 'url' MENJADI 'file' AGAR KONSISTEN DENGAN FRONTEND
+            'file': f'{settings.MEDIA_URL}moms/{uploaded_file.name}'
         }
         
         return Response(file_info, status=status.HTTP_201_CREATED)

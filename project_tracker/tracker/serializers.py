@@ -39,24 +39,22 @@ class FileSerializer(serializers.Serializer):
 
 class MeetingWeekSerializer(serializers.ModelSerializer):
     meetings = MinutesOfMeetingSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = MeetingWeek
-        fields = ['id', 'project', 'week_number', 'name', 'created_at', 'meetings']
-        extra_kwargs = {
-            'project': {'required': False}
-        }
+        fields = ['id', 'week_number', 'name', 'created_at', 'meetings']
 
 class ProjectSerializer(serializers.ModelSerializer):
     weekly_progress = WeeklyProgressSerializer(many=True, read_only=True)
     man_power_list = serializers.SerializerMethodField()
-    meeting_weeks = MeetingWeekSerializer(many=True, read_only=True)  # TAMBAHKAN INI
+    meeting_weeks = MeetingWeekSerializer(many=True, read_only=True)
+    total_moms_count = serializers.IntegerField(source='get_total_moms_count', read_only=True)
 
     class Meta:
         model = Project
         fields = [
             'id', 'name', 'start_date', 'end_date', 'status', 'priority',
-            'progress', 'weekly_progress', 'man_power', 'man_power_list', 'meeting_weeks'
+            'progress', 'weekly_progress', 'man_power', 'man_power_list', 'meeting_weeks', 'total_moms_count'
         ]
 
     def get_man_power_list(self, obj):

@@ -26,7 +26,11 @@ SECRET_KEY = 'django-insecure-%q7&obmy16*hlr1i%$ge+%hn-u52()%@k#m-q)ljk!to*l+crz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'rexxs8.pythonanywhere.com',
+    'www.rexxs8.pythonanywhere.com',
+    '127.0.0.1',
+]
 
 # Jika pakai email login, pastikan Custom User Model juga dipakai:
 AUTH_USER_MODEL = 'tracker.CustomUser' # Ganti 'tracker' dengan nama app kamu jika berbeda

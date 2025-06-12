@@ -1,9 +1,11 @@
 from django.urls import path
 from . import views
 from .views import ProjectAPI, WeeklyProgressAPI
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('', views.login_view, name='login'),  # root URL = login
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),  # logout
     path('index/', views.dashboard_view, name='index'),  # dashboard
     path('projects/', views.projects_view, name='projects'),  # project list
     path('mom/', views.mom_view, name='mom_view'), # minutes of meeting view

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -16,10 +16,10 @@ from .models import Project, WeeklyProgress, MeetingWeek, MinutesOfMeeting
 import logging
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 import os
 from django.conf import settings
 from rest_framework import generics
+from django.views.decorators.http import require_http_methods
 
 # Buat logger
 logger = logging.getLogger(__name__)

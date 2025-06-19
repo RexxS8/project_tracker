@@ -20,6 +20,7 @@ import os
 from django.conf import settings
 from rest_framework import generics
 from django.views.decorators.http import require_http_methods
+from django.http import Http404
 
 # Buat logger
 logger = logging.getLogger(__name__)
@@ -181,6 +182,40 @@ class WeeklyProgressAPI(APIView):
         except Exception as e:
             logger.exception("Error in WeeklyProgressAPI")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class WeeklyProgressDetailAPI(APIView):
+    """
+    API View untuk mengelola satu objek WeeklyProgress (GET, PUT, DELETE).
+    """
+    permission_classes = [AllowAny] # Sesuaikan jika perlu
+
+    def get_object(self, pk):
+        """Fungsi helper untuk mendapatkan objek atau 404."""
+        try:
+            return WeeklyProgress.objects.get(pk=pk)
+        except WeeklyProgress.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        """Mendapatkan detail satu weekly progress."""
+        progress = self.get_object(pk)
+        serializer = WeeklyProgressSerializer(progress)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        """Memperbarui satu weekly progress."""
+        progress = self.get_object(pk)
+        serializer = WeeklyProgressSerializer(progress, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        """Menghapus satu weekly progress."""
+        progress = self.get_object(pk)
+        progress.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @login_required
 def mom_view(request):

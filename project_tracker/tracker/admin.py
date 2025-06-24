@@ -50,8 +50,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class WeeklyProgressAdmin(admin.ModelAdmin):
-    list_display = ('project', 'week_number', 'submitted_task', 'approved_task', 'created_at')
-    list_filter = ('week_number',)
+    list_display = ('project', 'week_start_date', 'week_end_date', 'submitted_task', 'approved_task', 'created_at')
+    list_filter = ('project', 'week_start_date')
     search_fields = ('project__name',)
 
 class MinutesOfMeetingInline(admin.TabularInline):

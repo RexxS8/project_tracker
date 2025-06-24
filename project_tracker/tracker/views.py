@@ -51,14 +51,17 @@ def dashboard_view(request):
 
     # Data untuk FullCalendar
     project_events = [
-    {
-        "title": p.name,
-        "start": p.start_date.strftime("%Y-%m-%d"),
-        "end": (p.end_date + timedelta(days=1)).strftime("%Y-%m-%d"),  # Tambah 1 hari agar inclusive
-        "color": "#3182CE"
-    }
-    for p in projects
-]
+        {
+            "id": p.id,
+            "title": p.name,
+            "start": p.start_date.strftime("%Y-%m-%d"),
+            "end": (p.end_date + timedelta(days=1)).strftime("%Y-%m-%d"),
+            "extendedProps": {
+                'priority': p.priority  # <-- Tambahan penting
+            }
+        }
+        for p in projects
+    ]
 
     context = {
         'total_projects': total_projects,

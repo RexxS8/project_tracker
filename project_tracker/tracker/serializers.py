@@ -10,9 +10,11 @@ class WeeklyProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WeeklyProgress
+        # Mengganti week_number dengan week_start_date dan week_end_date
         fields = [
-            'id', 'project', 'project_name', 'week_number', 'task_description',
-            'target_completion', 'submitted_task', 'revised',
+            'id', 'project', 'project_name', 
+            'week_start_date', 'week_end_date', # <-- Perubahan
+            'task_description', 'target_completion', 'submitted_task', 'revised',
             'approved_task_by_comments', 'approved_task',
             'submitted_task_percent', 'approved_task_percent', 'created_at',
             'documents'

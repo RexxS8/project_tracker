@@ -6,6 +6,7 @@ class WeeklyProgressSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), required=False)
     submitted_task_percent = serializers.SerializerMethodField()
     approved_task_percent = serializers.SerializerMethodField()
+    documents = serializers.JSONField(required=False)
 
     class Meta:
         model = WeeklyProgress
@@ -13,7 +14,8 @@ class WeeklyProgressSerializer(serializers.ModelSerializer):
             'id', 'project', 'project_name', 'week_number', 'task_description',
             'target_completion', 'submitted_task', 'revised',
             'approved_task_by_comments', 'approved_task',
-            'submitted_task_percent', 'approved_task_percent', 'created_at'
+            'submitted_task_percent', 'approved_task_percent', 'created_at',
+            'documents'
         ]
 
     def get_submitted_task_percent(self, obj):

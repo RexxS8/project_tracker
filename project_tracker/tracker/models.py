@@ -90,6 +90,8 @@ class WeeklyProgress(models.Model):
     approved_task_by_comments = models.PositiveIntegerField(default=0)  # Tambahkan
     approved_task = models.PositiveIntegerField(default=0)  # Tambahkan
     created_at = models.DateTimeField(auto_now_add=True)
+    # Menyimpan daftar dokumen sebagai JSON. Contoh: [{'name': 'doc1.pdf', 'url': '/media/...'}]
+    documents = models.JSONField(default=list, blank=True)
 
     # Property untuk nilai persentase
     @property

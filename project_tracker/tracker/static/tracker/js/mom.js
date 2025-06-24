@@ -19,33 +19,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Setup event listeners for all interactive elements
     function setupEventListeners() {
-        // Navigation buttons
         document.getElementById('backToProjects').addEventListener('click', showProjectList);
         document.getElementById('backToWeeks').addEventListener('click', showWeeklyView);
-        
-        // Modal triggers and forms
         document.getElementById('addWeekBtn').addEventListener('click', () => openWeekModal());
         document.getElementById('addMomBtn').addEventListener('click', () => openMomModal());
-        
         document.getElementById('weekForm').addEventListener('submit', handleWeekSubmit);
         document.getElementById('momForm').addEventListener('submit', handleMomSubmit);
-
-        // Modal close/cancel buttons
         document.getElementById('closeWeekModal').addEventListener('click', closeWeekModal);
         document.getElementById('cancelWeek').addEventListener('click', closeWeekModal);
         document.getElementById('closeMomModal').addEventListener('click', closeMomModal);
         document.getElementById('cancelMom').addEventListener('click', closeMomModal);
-        
-        // Confirmation modal buttons
         document.getElementById('cancelConfirm').addEventListener('click', closeConfirmModal);
         document.getElementById('confirmDelete').addEventListener('click', executeDelete);
         
-        // File upload drag-and-drop and input handling
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('momDocument');
         if (dropZone) {
             dropZone.addEventListener('click', () => fileInput.click());
-            // Optional: Add drag/drop event listeners for a better UX
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 dropZone.classList.add('border-blue-500');
@@ -57,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 dropZone.classList.remove('border-blue-500');
                 fileInput.files = e.dataTransfer.files;
-                handleFileSelect({ target: fileInput }); // Trigger file list update
+                handleFileSelect({ target: fileInput });
             });
         }
         if (fileInput) {
@@ -67,9 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- API Functions ---
 
-    /**
-     * Fetches the list of all projects from the API.
-     */
     function fetchProjects() {
         fetch(`${apiBaseUrl}/api/projects/`)
             .then(response => {
@@ -83,11 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    /**
-     * Fetches detailed information for a single project, including its weeks and MOMs.
-     * @param {number} projectId - The ID of the project to fetch.
-     * @returns {Promise<object|null>} A promise that resolves to the project object or null on error.
-     */
     function fetchProjectDetails(projectId) {
         return fetch(`${apiBaseUrl}/api/projects/${projectId}/`)
             .then(response => {
@@ -101,42 +83,22 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    /**
-     * Creates a new meeting week for a specific project.
-     * @param {number} projectId - The ID of the project.
-     * @param {object} data - The week data (week_number, name).
-     */
     function createMeetingWeek(projectId, data) {
         return fetch(`${apiBaseUrl}/api/projects/${projectId}/meeting-weeks/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
             body: JSON.stringify(data)
         }).then(handleResponse);
     }
 
-    /**
-     * Updates an existing meeting week.
-     * @param {number} weekId - The ID of the week to update.
-     * @param {object} data - The updated week data.
-     */
     function updateMeetingWeek(weekId, data) {
         return fetch(`${apiBaseUrl}/api/meeting-weeks/${weekId}/`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
             body: JSON.stringify(data)
         }).then(handleResponse);
     }
 
-    /**
-     * Deletes a meeting week.
-     * @param {number} weekId - The ID of the week to delete.
-     */
     function deleteMeetingWeek(weekId) {
         return fetch(`${apiBaseUrl}/api/meeting-weeks/${weekId}/`, {
             method: 'DELETE',
@@ -144,42 +106,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }).then(response => (response.status === 204 ? null : handleResponse(response)));
     }
 
-    /**
-     * Creates a new MOM for a specific week.
-     * @param {number} weekId - The ID of the parent week.
-     * @param {object} data - The MOM data to be created.
-     */
     function createMOM(weekId, data) {
         return fetch(`${apiBaseUrl}/api/meeting-weeks/${weekId}/moms/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
             body: JSON.stringify(data)
         }).then(handleResponse);
     }
 
-    /**
-     * Updates an existing MOM.
-     * @param {number} momId - The ID of the MOM to update.
-     * @param {object} data - The updated MOM data.
-     */
     function updateMOM(momId, data) {
         return fetch(`${apiBaseUrl}/api/moms/${momId}/`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
             body: JSON.stringify(data)
         }).then(handleResponse);
     }
 
-    /**
-     * Deletes a MOM.
-     * @param {number} momId - The ID of the MOM to delete.
-     */
     function deleteMOM(momId) {
         return fetch(`${apiBaseUrl}/api/moms/${momId}/`, {
             method: 'DELETE',
@@ -188,15 +130,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Uploads a single file to the server.
-     * @param {File} file - The file to upload.
-     * @returns {Promise<object>} A promise that resolves to the uploaded file's data (e.g., {id, name, url}).
+     * PERUBAHAN: Menggunakan URL upload generik.
+     * Mengunggah satu berkas ke server.
+     * @param {File} file - Berkas yang akan diunggah.
+     * @returns {Promise<object>} Promise yang berisi data berkas yang diunggah.
      */
     function uploadFile(file) {
         const formData = new FormData();
         formData.append('file', file);
         
-        return fetch(`${apiBaseUrl}/api/upload/`, {
+        // PERUBAHAN: Gunakan URL upload generik dengan tipe 'moms'
+        return fetch(`${apiBaseUrl}/api/upload/moms/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': getCsrfToken() },
             body: formData
@@ -205,42 +149,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Helper Functions ---
 
-    /**
-     * A generic response handler for fetch calls. It checks for errors and parses JSON.
-     * @param {Response} response - The fetch response object.
-     * @returns {Promise<object>} A promise that resolves with the JSON body.
-     */
     async function handleResponse(response) {
         if (!response.ok) {
             let errorData;
             try {
                 errorData = await response.json();
             } catch (e) {
-                // If the error response is not JSON, use the status text.
                 throw new Error(response.statusText || `HTTP error! status: ${response.status}`);
             }
-            // Use a detailed error message from the backend if available.
             const errorMessage = errorData.detail || errorData.error || JSON.stringify(errorData);
             throw new Error(errorMessage);
         }
-        // Handle successful but empty responses (e.g., 204 No Content).
         return response.status === 204 ? null : response.json();
     }
     
-    /**
-     * Retrieves the CSRF token from the DOM.
-     * @returns {string} The CSRF token value.
-     */
     function getCsrfToken() {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
         return csrfToken ? csrfToken.value : '';
     }
 
-    /**
-     * Returns Tailwind CSS classes based on project status.
-     * @param {string} status - The project status string.
-     * @returns {string} Tailwind CSS classes.
-     */
     function getStatusColor(status) {
         switch (status) {
             case 'Completed': return 'bg-green-100 text-green-800';
@@ -250,11 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    /**
-     * Returns Tailwind CSS classes based on MOM status.
-     * @param {string} status - The MOM status string.
-     * @returns {string} Tailwind CSS classes.
-     */
     function getMomStatusColor(status) {
         switch (status) {
             case 'Open': return 'bg-red-100 text-red-800';
@@ -264,11 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Formats a date string into a more readable format (e.g., "Jun 11, 2025").
-     * @param {string} dateString - The date string to format (e.g., "2025-06-11").
-     * @returns {string} The formatted date string.
-     */
     function formatDate(dateString) {
         if (!dateString) return 'N/A';
         try {
@@ -279,13 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Displays a UI notification. (Currently uses alert as a placeholder).
-     * @param {string} message - The message to display.
-     * @param {string} type - The type of notification ('success' or 'error').
-     */
     function showNotification(message, type = 'success') {
-        // TODO: Replace with a more sophisticated notification library like Toastify or a custom element.
         console.log(`${type.toUpperCase()}: ${message}`);
         alert(`${type.toUpperCase()}: ${message}`);
     }
@@ -293,15 +204,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Render Functions ---
 
-    /**
-     * Renders the list of projects on the main view.
-     * @param {Array<object>} projects - An array of project objects.
-     */
     function renderProjectList(projects) {
         const container = projectListView.querySelector('.grid');
         if (!container) return;
         
-        container.innerHTML = ''; // Clear previous content
+        container.innerHTML = ''; 
         
         if (!projects || projects.length === 0) {
              container.innerHTML = `<p class="text-center text-gray-500 col-span-full">No projects found.</p>`;
@@ -342,17 +249,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Fetches and displays the weekly view for a selected project.
-     * @param {object} project - The project object to display.
-     */
     async function showProject(project) {
         if (!project || !project.id) {
             showNotification('Invalid project data', 'error');
             return;
         }
         
-        // Fetch the full project details to ensure data is fresh
         const fullProject = await fetchProjectDetails(project.id);
         if (!fullProject) {
             showNotification('Failed to load project details.', 'error');
@@ -363,16 +265,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('selectedProjectTitle').textContent = fullProject.name;
         renderWeeklyView(fullProject);
         
-        // Switch views
         projectListView.classList.add('hidden');
         weeklyView.classList.remove('hidden');
         momDetailView.classList.add('hidden');
     }
 
-    /**
-     * Renders the list of meeting weeks for a project.
-     * @param {object} project - The project object containing meeting_weeks.
-     */
     function renderWeeklyView(project) {
         const container = weeklyView.querySelector('.grid');
         if (!container) return;
@@ -428,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
             container.appendChild(weekCard);
         });
         
-        // Re-attach event listeners for the newly created elements
         container.querySelectorAll('.week-clickable').forEach(el => {
             el.addEventListener('click', function() {
                 const weekId = this.dataset.weekId;
@@ -455,10 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    /**
-     * Displays the MOM list for a selected week.
-     * @param {object} week - The week object containing meetings.
-     */
     function showWeek(week) {
         if (!week || !week.id) {
             showNotification('Invalid week data.', 'error');
@@ -470,15 +362,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         renderMomList(week.meetings || []);
         
-        // Switch views
         weeklyView.classList.add('hidden');
         momDetailView.classList.remove('hidden');
     }
 
-    /**
-     * Renders the list of MOMs for the currently selected week.
-     * @param {Array<object>} moms - An array of MOM objects.
-     */
     function renderMomList(moms) {
         const container = document.getElementById('momList');
         if (!container) return;
@@ -538,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
             container.appendChild(momCard);
         });
         
-        // Re-attach event listeners
         container.querySelectorAll('.edit-mom-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const momId = this.dataset.momId;
@@ -557,10 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- CRUD and Modal Logic ---
 
-    /**
-     * Opens the week modal for adding or editing a week.
-     * @param {object|null} week - The week object to edit, or null to add a new one.
-     */
     function openWeekModal(week = null) {
         currentAction = week ? 'edit' : 'add';
         document.getElementById('weekModalTitle').textContent = week ? 'Edit Week' : 'Add New Week';
@@ -572,11 +454,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             document.getElementById('weekNumber').value = week.week_number || '';
             document.getElementById('weekName').value = week.name || '';
-            // Store the whole week object being edited
             currentWeek = currentProject.meeting_weeks.find(w => w.id === week.id);
         } else {
             document.getElementById('weekForm').reset();
-            // Not editing, so no specific week is selected for the action
             currentWeek = null; 
         }
         
@@ -587,10 +467,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('weekModal').classList.add('hidden');
     }
 
-    /**
-     * Handles the submission of the week form (add/edit).
-     * @param {Event} e - The form submission event.
-     */
     async function handleWeekSubmit(e) {
         e.preventDefault();
         
@@ -623,7 +499,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             closeWeekModal();
-            // Refresh the entire project to get the updated list of weeks
             await showProject(currentProject);
         } catch (error) {
             console.error('Error saving week:', error);
@@ -631,10 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    /**
-     * Opens the MOM modal for adding or editing.
-     * @param {object|null} mom - The MOM object to edit, or null for a new MOM.
-     */
     function openMomModal(mom = null) {
         currentAction = mom ? 'edit' : 'add';
         document.getElementById('momModalTitle').textContent = mom ? 'Edit Minutes of Meeting' : 'Add Minutes of Meeting';
@@ -650,7 +521,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('momDescription').value = mom.description;
             currentMom = mom;
         } else {
-            // Set default date for new MOMs
             document.getElementById('momDate').valueAsDate = new Date();
             currentMom = null;
         }
@@ -662,10 +532,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('momModal').classList.add('hidden');
     }
 
-    /**
-     * Handles the submission of the MOM form (add/edit).
-     * @param {Event} e - The form submission event.
-     */
     async function handleMomSubmit(e) {
         e.preventDefault();
         
@@ -680,7 +546,6 @@ document.addEventListener('DOMContentLoaded', function() {
             pic: document.getElementById('momPic').value,
             status: document.getElementById('momStatus').value,
             description: document.getElementById('momDescription').value,
-            // Saat edit, sertakan objek dokumen yang sudah ada
             documents: currentMom?.documents || []
         };
         
@@ -688,17 +553,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const files = fileInput.files;
         
         try {
-            // Step 1: Upload new files if any
             if (files.length > 0) {
                 const uploadPromises = Array.from(files).map(file => uploadFile(file));
-                // uploadedFiles akan menjadi array dari objek: [{name, size, file}, ...]
                 const uploadedFiles = await Promise.all(uploadPromises);
-
-                // GABUNGKAN OBJEK DOKUMEN BARU DENGAN YANG SUDAH ADA
                 payload.documents = [...payload.documents, ...uploadedFiles];
             }
             
-            // Step 2: Create or Update the MOM with the final payload
             if (currentAction === 'add') {
                 await createMOM(parentWeekId, payload);
                 showNotification('MOM added successfully!');
@@ -711,13 +571,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             closeMomModal();
-            // Step 3: Refresh project data to show the updated MOM list
             const updatedProject = await fetchProjectDetails(currentProject.id);
             if (updatedProject) {
                 currentProject = updatedProject;
                 const updatedWeek = updatedProject.meeting_weeks.find(w => w.id == parentWeekId);
                 if (updatedWeek) {
-                    currentWeek = updatedWeek; // Update state
+                    currentWeek = updatedWeek; 
                     renderMomList(updatedWeek.meetings);
                 }
             }
@@ -727,16 +586,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Handles the file selection from the file input and displays the list.
-     * @param {Event} e - The change event from the file input.
-     */
     function handleFileSelect(e) {
         const files = Array.from(e.target.files);
         const fileList = document.getElementById('fileList');
         if (!fileList) return;
         
-        fileList.innerHTML = ''; // Clear previous list
+        fileList.innerHTML = ''; 
         files.forEach(file => {
             const fileItem = document.createElement('div');
             fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded';
@@ -751,7 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
             fileList.appendChild(fileItem);
         });
         
-        // Add event listeners to the remove buttons
         fileList.querySelectorAll('.remove-file-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 removeFileFromInput(this.dataset.fileName);
@@ -759,32 +613,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Removes a selected file from the file input list before uploading.
-     * @param {string} fileName - The name of the file to remove.
-     */
     function removeFileFromInput(fileName) {
         const fileInput = document.getElementById('momDocument');
         const dataTransfer = new DataTransfer();
         const files = Array.from(fileInput.files);
 
-        // Add all files except the one to be removed to the DataTransfer object
         files.filter(file => file.name !== fileName).forEach(file => {
             dataTransfer.items.add(file);
         });
         
-        // Assign the updated file list back to the input
         fileInput.files = dataTransfer.files;
         
-        // Refresh the displayed file list
         handleFileSelect({ target: fileInput });
     }
 
-    /**
-     * Opens a confirmation modal before deleting an item.
-     * @param {string} type - The type of item to delete ('week' or 'mom').
-     * @param {number} id - The ID of the item to delete.
-     */
     function confirmDelete(type, id) {
         if (!id) {
             showNotification('Invalid ID for deletion.', 'error');
@@ -812,9 +654,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('confirmModal').classList.remove('hidden');
     }
     
-    /**
-     * Executes the delete operation confirmed by the user.
-     */
     async function executeDelete() {
         if (!pendingDeleteAction) return;
         
@@ -824,12 +663,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (type === 'week') {
                 await deleteMeetingWeek(id);
                 showNotification('Week deleted successfully!');
-                // Refresh project data to show the updated week list
                 await showProject(currentProject);
             } else if (type === 'mom') {
                 await deleteMOM(id);
                 showNotification('MOM deleted successfully!');
-                // Refresh project data to get updated MOM list
                 const updatedProject = await fetchProjectDetails(currentProject.id);
                 if(updatedProject) {
                     currentProject = updatedProject;
@@ -838,7 +675,6 @@ document.addEventListener('DOMContentLoaded', function() {
                          currentWeek = updatedWeek;
                          renderMomList(updatedWeek.meetings);
                     } else {
-                        // The whole week might have been deleted, go back to week view
                         showWeeklyView();
                         renderWeeklyView(updatedProject);
                     }

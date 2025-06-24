@@ -4,7 +4,7 @@ from django.contrib import messages
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import ProjectSerializer, WeeklyProgressSerializer, MeetingWeekSerializer, MinutesOfMeetingSerializer
 from datetime import datetime, timedelta
 from django.db.models import Q
@@ -14,12 +14,9 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 from .models import Project, WeeklyProgress, MeetingWeek, MinutesOfMeeting
 import logging
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
 import os
 from django.conf import settings
 from rest_framework import generics
-from django.views.decorators.http import require_http_methods
 from django.http import Http404
 
 # Buat logger
@@ -103,8 +100,7 @@ def projects_view(request):
     return render(request, 'tracker/projects.html', context)
 
 class ProjectAPI(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     # GET untuk list semua project atau detail satu project
     def get(self, request, pk=None):
@@ -147,8 +143,7 @@ class ProjectAPI(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 class WeeklyProgressAPI(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
      # GET untuk list weekly progress dari project tertentu
     def get(self, request, project_id):
         """
@@ -187,7 +182,7 @@ class WeeklyProgressDetailAPI(APIView):
     """
     API View untuk mengelola satu objek WeeklyProgress (GET, PUT, DELETE).
     """
-    permission_classes = [AllowAny] # Sesuaikan jika perlu
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         """Fungsi helper untuk mendapatkan objek atau 404."""
@@ -243,8 +238,7 @@ class MeetingWeekAPI(generics.ListCreateAPIView):
 
 # Create API views for MeetingWeek and MinutesOfMeeting
 class MeetingWeekDetailAPI(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, week_id):
         week = get_object_or_404(MeetingWeek, pk=week_id)
@@ -266,8 +260,7 @@ class MeetingWeekDetailAPI(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class MinutesOfMeetingAPI(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     def get(self, request, week_id):
         moms = MinutesOfMeeting.objects.filter(week_id=week_id)
@@ -288,8 +281,7 @@ class MinutesOfMeetingAPI(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MinutesOfMeetingDetailAPI(APIView):
-    #permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     def put(self, request, mom_id):
         mom = get_object_or_404(MinutesOfMeeting, pk=mom_id)
@@ -304,28 +296,46 @@ class MinutesOfMeetingDetailAPI(APIView):
         mom.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-class FileUploadAPI(APIView):
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
+class GenericFileUploadAPI(APIView):
+    """
+    API generik untuk menangani unggahan berkas.
+    Jenis unggahan ('moms' atau 'weekly_progress') ditentukan dari URL.
+    Ini akan membuat folder 'weekly_progress' secara otomatis jika belum ada.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, upload_type):
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        media_dir = os.path.join(settings.MEDIA_ROOT, 'moms')
+
+        # Validasi tipe unggahan untuk keamanan, hanya izinkan folder yang telah ditentukan
+        if upload_type not in ['moms', 'weekly_progress']:
+            return Response({'error': 'Invalid upload type specified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Buat direktori berdasarkan tipe unggahan jika belum ada
+        media_dir = os.path.join(settings.MEDIA_ROOT, upload_type)
         os.makedirs(media_dir, exist_ok=True)
-        
+
         file_path = os.path.join(media_dir, uploaded_file.name)
+
+        # Penanganan sederhana untuk konflik nama berkas (menambahkan timestamp)
+        if os.path.exists(file_path):
+            name, ext = os.path.splitext(uploaded_file.name)
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            new_name = f"{name}_{timestamp}{ext}"
+            file_path = os.path.join(media_dir, new_name)
+            uploaded_file.name = new_name # Penting: update nama berkas untuk respons
+
         with open(file_path, 'wb+') as destination:
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
-        
-        # Kembalikan file metadata
+
+        # Kembalikan metadata berkas agar bisa digunakan oleh frontend
         file_info = {
             'name': uploaded_file.name,
             'size': uploaded_file.size,
-            # GANTI 'url' MENJADI 'file' AGAR KONSISTEN DENGAN FRONTEND
-            'file': f'{settings.MEDIA_URL}moms/{uploaded_file.name}'
+            'file': f'{settings.MEDIA_URL}{upload_type}/{uploaded_file.name}'
         }
-        
+
         return Response(file_info, status=status.HTTP_201_CREATED)

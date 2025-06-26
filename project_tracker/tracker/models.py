@@ -92,6 +92,7 @@ class MeetingWeek(models.Model):
 class MinutesOfMeeting(models.Model):
     week = models.ForeignKey(MeetingWeek, related_name='meetings', on_delete=models.CASCADE)
     date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
     pic = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=[('Open', 'Open'), ('In Progress', 'In Progress'), ('Closed', 'Closed')], default='Open')
     description = models.TextField()

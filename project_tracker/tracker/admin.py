@@ -65,8 +65,8 @@ class MeetingWeekAdmin(admin.ModelAdmin):
     inlines = [MinutesOfMeetingInline]  # Menambahkan inline editing untuk MoM
 
 class MinutesOfMeetingAdmin(admin.ModelAdmin):
-    list_display = ('week', 'date', 'pic', 'status', 'created_at', 'updated_at')
-    list_filter = ('status', 'date')
+    list_display = ('week', 'date', 'due_date', 'pic', 'status', 'updated_at')
+    list_filter = ('status', 'date', 'due_date')
     search_fields = ('pic', 'description')
 
 admin.site.register(CustomUser, CustomUserAdmin)
